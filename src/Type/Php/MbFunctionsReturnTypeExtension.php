@@ -26,8 +26,7 @@ class MbFunctionsReturnTypeExtension implements DynamicFunctionReturnTypeExtensi
 
 	use MbFunctionsReturnTypeExtensionTrait;
 
-	/** @var int[]  */
-	private array $encodingPositionMap = [
+	private const ENCODING_POSITION_MAP = [
 		'mb_http_output' => 1,
 		'mb_regex_encoding' => 1,
 		'mb_internal_encoding' => 1,
@@ -42,13 +41,13 @@ class MbFunctionsReturnTypeExtension implements DynamicFunctionReturnTypeExtensi
 
 	public function isFunctionSupported(FunctionReflection $functionReflection): bool
 	{
-		return array_key_exists($functionReflection->getName(), $this->encodingPositionMap);
+		return array_key_exists($functionReflection->getName(), self::ENCODING_POSITION_MAP);
 	}
 
 	public function getTypeFromFunctionCall(FunctionReflection $functionReflection, FuncCall $functionCall, Scope $scope): Type
 	{
 		$returnType = ParametersAcceptorSelector::selectSingle($functionReflection->getVariants())->getReturnType();
-		$positionEncodingParam = $this->encodingPositionMap[$functionReflection->getName()];
+		$positionEncodingParam = self::ENCODING_POSITION_MAP[$functionReflection->getName()];
 
 		if (count($functionCall->getArgs()) < $positionEncodingParam) {
 			return TypeCombinator::remove($returnType, new BooleanType());
