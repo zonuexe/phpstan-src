@@ -44,6 +44,7 @@ class PhpFunctionFromParserNodeReflection implements FunctionReflection, Extende
 	 * @param Type[] $parameterOutTypes
 	 * @param array<string, bool> $immediatelyInvokedCallableParameters
 	 * @param array<string, Type> $phpDocClosureThisTypeParameters
+	 * @param array<string, bool> $pureUnlessCallableIsImpureParameters
 	 */
 	public function __construct(
 		FunctionLike $functionLike,
@@ -65,6 +66,7 @@ class PhpFunctionFromParserNodeReflection implements FunctionReflection, Extende
 		private array $parameterOutTypes,
 		private array $immediatelyInvokedCallableParameters,
 		private array $phpDocClosureThisTypeParameters,
+		private array $pureUnlessCallableIsImpureParameters,
 	)
 	{
 		$this->functionLike = $functionLike;

@@ -59,6 +59,7 @@ final class PhpMethodFromParserNodeReflection extends PhpFunctionFromParserNodeR
 		array $parameterOutTypes,
 		array $immediatelyInvokedCallableParameters,
 		array $phpDocClosureThisTypeParameters,
+		array $pureUnlessCallableIsImpureParameters,
 	)
 	{
 		$name = strtolower($classMethod->name->name);
@@ -114,6 +115,7 @@ final class PhpMethodFromParserNodeReflection extends PhpFunctionFromParserNodeR
 			$parameterOutTypes,
 			$immediatelyInvokedCallableParameters,
 			$phpDocClosureThisTypeParameters,
+			$pureUnlessCallableIsImpureParameters,
 		);
 	}
 
