@@ -26,6 +26,7 @@ final class PhpParameterFromParserNodeReflection implements ExtendedParameterRef
 		private ?Type $outType,
 		private TrinaryLogic $immediatelyInvokedCallable,
 		private ?Type $closureThisType,
+		private bool $pureUnlessCallableIsImpureParameter,
 	)
 	{
 	}
@@ -96,6 +97,11 @@ final class PhpParameterFromParserNodeReflection implements ExtendedParameterRef
 	public function getClosureThisType(): ?Type
 	{
 		return $this->closureThisType;
+	}
+
+	public function isPureUnlessCallableIsImpureParameter(): bool
+	{
+		return $this->pureUnlessCallableIsImpureParameter;
 	}
 
 }

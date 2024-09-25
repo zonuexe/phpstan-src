@@ -4600,6 +4600,23 @@ final class NodeScopeResolver
 					}
 					$parameter = $lastParameter;
 				}
+
+				if ($parameter instanceof ExtendedParameterReflection
+					&& $parameter->isPureUnlessCallableIsImpureParameter()
+					&& $parameterType->isTrue()->yes()
+				) {
+					if (count($parameterType->getCallableParametersAcceptors($scope)) > 0) {
+						$parameterCallable = $parameterType->getCallableParametersAcceptors($scope)[0];
+						$certain = $parameterCallable->isPure()->yes();
+						if ($certain) {
+							$impurePoints[] = new SimpleImpurePoint(
+								'functionCall',
+								sprintf('call to function %s()', $calleeReflection->getName()),
+								$certain,
+							);
+						}
+					}
+				}
 			}
 
 			$lookForUnset = false;

@@ -22,6 +22,7 @@ final class ExtendedNativeParameterReflection implements ExtendedParameterReflec
 		private ?Type $outType,
 		private TrinaryLogic $immediatelyInvokedCallable,
 		private ?Type $closureThisType,
+		private bool $pureUnlessCallableIsImpureParameter = false,
 	)
 	{
 	}
@@ -79,6 +80,11 @@ final class ExtendedNativeParameterReflection implements ExtendedParameterReflec
 	public function getClosureThisType(): ?Type
 	{
 		return $this->closureThisType;
+	}
+
+	public function isPureUnlessCallableIsImpureParameter(): bool
+	{
+		return $this->pureUnlessCallableIsImpureParameter;
 	}
 
 }

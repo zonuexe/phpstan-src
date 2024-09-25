@@ -22,6 +22,7 @@ final class ExtendedDummyParameter extends DummyParameter implements ExtendedPar
 		private ?Type $outType,
 		private TrinaryLogic $immediatelyInvokedCallable,
 		private ?Type $closureThisType,
+		private bool $pureUnlessCallableIsImpureParameter = false,
 	)
 	{
 		parent::__construct($name, $type, $optional, $passedByReference, $variadic, $defaultValue);
@@ -50,6 +51,11 @@ final class ExtendedDummyParameter extends DummyParameter implements ExtendedPar
 	public function getClosureThisType(): ?Type
 	{
 		return $this->closureThisType;
+	}
+
+	public function isPureUnlessCallableIsImpureParameter(): bool
+	{
+		return $this->pureUnlessCallableIsImpureParameter;
 	}
 
 }
