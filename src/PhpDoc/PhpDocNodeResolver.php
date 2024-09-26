@@ -46,7 +46,6 @@ use function array_reverse;
 use function count;
 use function in_array;
 use function method_exists;
-use function preg_split;
 use function str_starts_with;
 use function substr;
 
@@ -423,17 +422,12 @@ final class PhpDocNodeResolver
 	public function resolveParamPureUnlessCallableIsImpure(PhpDocNode $phpDocNode): array
 	{
 		$parameters = [];
-		// TODO: implement phpstan/phpdoc-parser
-		foreach ($phpDocNode->getTagsByName('@pure-unless-callable-impure') as $tag) {
-			$value = preg_split('/\s/u', (string)$tag->value)[0] ?? null;
-			if ($value !== null && str_starts_with($value, '$')) {
-				$parameters[substr($value, 1)] = true;
-			}
+		foreach ($phpDocNode->getPureUnlessCallableIsImpureTagValues() as $tag) {
+			$parameters[$tag->parameterName] = true;
 		}
 
 		return $parameters;
 	}
-
 
 	/**
 	 * @return array<string, ParamClosureThisTag>
