@@ -3,6 +3,7 @@
 namespace PHPStan\Rules\PhpDoc;
 
 use PHPStan\Reflection\InitializerExprTypeResolver;
+use PHPStan\Rules\ClassNameCheck;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 
@@ -15,7 +16,10 @@ class MethodAssertRuleTest extends RuleTestCase
 	protected function getRule(): Rule
 	{
 		$initializerExprTypeResolver = self::getContainer()->getByType(InitializerExprTypeResolver::class);
-		return new MethodAssertRule(new AssertRuleHelper($initializerExprTypeResolver));
+		$unresolvableTypeHelper = self::getContainer()->getByType(UnresolvableTypeHelper::class);
+		$classCheck = self::getContainer()->getByType(ClassNameCheck::class);
+
+		return new MethodAssertRule(new AssertRuleHelper($initializerExprTypeResolver, $unresolvableTypeHelper, $classCheck, $this->createReflectionProvider()));
 	}
 
 	public function testRule(): void

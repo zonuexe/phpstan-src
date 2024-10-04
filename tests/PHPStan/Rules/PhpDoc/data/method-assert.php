@@ -101,4 +101,11 @@ class Foo
 	{
 	}
 
+	/**
+	 * @phpstan-assert-if-false NonExistClass $obj
+	 */
+	public function nonExistClassAssert(object $obj): void
+	{
+	}
+
 }
