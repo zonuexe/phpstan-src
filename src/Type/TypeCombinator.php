@@ -813,7 +813,7 @@ class TypeCombinator
 
 					$innerValueType = $type->getValueTypes()[$i];
 					$generalizedValueType = TypeTraverser::map($innerValueType, static function (Type $type) use ($traverse): Type {
-						if ($type instanceof ArrayType || $type instanceof ConstantArrayType) {
+						if ($type instanceof ArrayType) {
 							return TypeCombinator::intersect($type, new OversizedArrayType());
 						}
 
@@ -853,8 +853,8 @@ class TypeCombinator
 				$eachIsList = false;
 			}
 
-			$keyType = self::union(...array_values($keyTypes));
-			$valueType = self::union(...array_values($valueTypes));
+			$keyType = self::union(...$keyTypes);
+			$valueType = self::union(...$valueTypes);
 
 			$arrayType = new ArrayType($keyType, $valueType);
 			if ($eachIsList) {
