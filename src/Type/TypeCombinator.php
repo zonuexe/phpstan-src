@@ -780,8 +780,10 @@ class TypeCombinator
 		}
 
 		$results = [];
+		$eachIsOversized = true;
 		foreach ($types as $type) {
-			$results[] = TypeTraverser::map($type, static function (Type $type, callable $traverse): Type {
+			$isOversized = false;
+			$result = TypeTraverser::map($type, static function (Type $type, callable $traverse) use (&$isOversized): Type {
 				if (!$type instanceof ConstantArrayType) {
 					return $traverse($type);
 				}
@@ -789,6 +791,8 @@ class TypeCombinator
 				if ($type->isIterableAtLeastOnce()->no()) {
 					return $type;
 				}
+
+				$isOversized = true;
 
 				$isList = true;
 				$valueTypes = [];
@@ -808,8 +812,8 @@ class TypeCombinator
 					$keyTypes[$generalizedKeyType->describe(VerbosityLevel::precise())] = $generalizedKeyType;
 
 					$innerValueType = $type->getValueTypes()[$i];
-					$generalizedValueType = TypeTraverser::map($innerValueType, static function (Type $type, callable $innerTraverse) use ($traverse): Type {
-						if ($type instanceof ArrayType) {
+					$generalizedValueType = TypeTraverser::map($innerValueType, static function (Type $type) use ($traverse): Type {
+						if ($type instanceof ArrayType || $type instanceof ConstantArrayType) {
 							return TypeCombinator::intersect($type, new OversizedArrayType());
 						}
 
@@ -828,6 +832,36 @@ class TypeCombinator
 
 				return TypeCombinator::intersect($arrayType, new NonEmptyArrayType(), new OversizedArrayType());
 			});
+
+			if (!$isOversized) {
+				$eachIsOversized = false;
+			}
+
+			$results[] = $result;
+		}
+
+		if ($eachIsOversized) {
+			$eachIsList = true;
+			$keyTypes = [];
+			$valueTypes = [];
+			foreach ($results as $result) {
+				$keyTypes[] = $result->getIterableKeyType();
+				$valueTypes[] = $result->getLastIterableValueType();
+				if ($result->isList()->yes()) {
+					continue;
+				}
+				$eachIsList = false;
+			}
+
+			$keyType = self::union(...array_values($keyTypes));
+			$valueType = self::union(...array_values($valueTypes));
+
+			$arrayType = new ArrayType($keyType, $valueType);
+			if ($eachIsList) {
+				$arrayType = self::intersect($arrayType, new AccessoryArrayListType());
+			}
+
+			return [self::intersect($arrayType, new NonEmptyArrayType(), new OversizedArrayType())];
 		}
 
 		return $results;
