@@ -852,8 +852,8 @@ final class TypeCombinator
 				$eachIsList = false;
 			}
 
-			$keyType = self::union(...array_values($keyTypes));
-			$valueType = self::union(...array_values($valueTypes));
+			$keyType = self::union(...$keyTypes);
+			$valueType = self::union(...$valueTypes);
 
 			$arrayType = new ArrayType($keyType, $valueType);
 			if ($eachIsList) {
