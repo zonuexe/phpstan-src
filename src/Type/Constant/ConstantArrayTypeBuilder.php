@@ -127,6 +127,7 @@ final class ConstantArrayTypeBuilder
 
 				if (count($this->keyTypes) > self::ARRAY_COUNT_LIMIT) {
 					$this->degradeToGeneralArray = true;
+					$this->oversized = true;
 				}
 
 				return;
@@ -193,6 +194,7 @@ final class ConstantArrayTypeBuilder
 
 				if (count($this->keyTypes) > self::ARRAY_COUNT_LIMIT) {
 					$this->degradeToGeneralArray = true;
+					$this->oversized = true;
 				}
 
 				return;

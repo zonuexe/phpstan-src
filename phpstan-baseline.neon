@@ -1326,7 +1326,7 @@ parameters:
 		-
 			message: '#^Doing instanceof PHPStan\\Type\\ArrayType is error\-prone and deprecated\. Use Type\:\:isArray\(\) or Type\:\:getArrays\(\) instead\.$#'
 			identifier: phpstanApi.instanceofType
-			count: 3
+			count: 4
 			path: src/Type/IntersectionType.php
 
 		-
@@ -1345,6 +1345,12 @@ parameters:
 			message: '#^Doing instanceof PHPStan\\Type\\Constant\\ConstantArrayType is error\-prone and deprecated\. Use Type\:\:getConstantArrays\(\) instead\.$#'
 			identifier: phpstanApi.instanceofType
 			count: 3
+			path: src/Type/IntersectionType.php
+
+		-
+			message: '#^Doing instanceof PHPStan\\Type\\Constant\\ConstantStringType is error\-prone and deprecated\. Use Type\:\:getConstantStrings\(\) instead\.$#'
+			identifier: phpstanApi.instanceofType
+			count: 1
 			path: src/Type/IntersectionType.php
 
 		-

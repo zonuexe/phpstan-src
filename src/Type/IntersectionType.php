@@ -30,6 +30,7 @@ use PHPStan\Type\Accessory\AccessoryType;
 use PHPStan\Type\Accessory\NonEmptyArrayType;
 use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\Constant\ConstantIntegerType;
+use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\Generic\TemplateType;
 use PHPStan\Type\Generic\TemplateTypeMap;
 use PHPStan\Type\Generic\TemplateTypeVariance;
@@ -743,6 +744,30 @@ class IntersectionType implements CompoundType
 
 	public function setOffsetValueType(?Type $offsetType, Type $valueType, bool $unionValues = true): Type
 	{
+		if ($this->isOversizedArray()->yes()) {
+			return $this->intersectTypes(static function (Type $type) use ($offsetType, $valueType, $unionValues): Type {
+				// avoid new HasOffsetValueType being intersected with oversized array
+				if (!$type instanceof ArrayType) {
+					return $type->setOffsetValueType($offsetType, $valueType, $unionValues);
+				}
+
+				if (!$offsetType instanceof ConstantStringType && !$offsetType instanceof ConstantIntegerType) {
+					return $type->setOffsetValueType($offsetType, $valueType, $unionValues);
+				}
+
+				if (!$offsetType->isSuperTypeOf($type->getKeyType())->yes()) {
+					return $type->setOffsetValueType($offsetType, $valueType, $unionValues);
+				}
+
+				return TypeCombinator::intersect(
+					new ArrayType(
+						TypeCombinator::union($type->getKeyType(), $offsetType),
+						TypeCombinator::union($type->getItemType(), $valueType),
+					),
+					new NonEmptyArrayType(),
+				);
+			});
+		}
 		return $this->intersectTypes(static fn (Type $type): Type => $type->setOffsetValueType($offsetType, $valueType, $unionValues));
 	}
 
