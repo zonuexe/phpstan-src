@@ -46,6 +46,10 @@ final class OffsetAccessValueAssignmentRule implements Rule
 		}
 
 		$arrayDimFetch = $node->var;
+		$varType = $scope->getType($arrayDimFetch->var);
+		if ($varType->isObject()->no()) {
+			return [];
+		}
 
 		if ($node instanceof Assign || $node instanceof Expr\AssignRef) {
 			$assignedValueType = $scope->getType($node->expr);
