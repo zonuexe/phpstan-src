@@ -14,6 +14,7 @@ use PHPStan\Type\IntersectionType;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\NeverType;
 use PHPStan\Type\NullType;
+use PHPStan\Type\ObjectType;
 use PHPStan\Type\ObjectWithoutClassType;
 use PHPStan\Type\StaticType;
 use PHPStan\Type\StrictMixedType;
@@ -497,7 +498,15 @@ final class RuleLevelHelper
 		}
 
 		$tip = null;
-		if (str_contains($type->describe(VerbosityLevel::typeOnly()), 'PhpParser\\Node\\Arg|PhpParser\\Node\\VariadicPlaceholder') && !$unionTypeCriteriaCallback($type)) {
+		if (
+			$type instanceof UnionType
+			&& count($type->getTypes()) === 2
+			&& $type->getTypes()[0] instanceof ObjectType
+			&& $type->getTypes()[1] instanceof ObjectType
+			&& $type->getTypes()[0]->getClassName() === 'PhpParser\\Node\\Arg'
+			&& $type->getTypes()[1]->getClassName() === 'PhpParser\\Node\\VariadicPlaceholder'
+			&& !$unionTypeCriteriaCallback($type)
+		) {
 			$tip = 'Use <fg=cyan>->getArgs()</> instead of <fg=cyan>->args</>.';
 		}
 
