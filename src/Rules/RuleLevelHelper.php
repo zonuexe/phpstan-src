@@ -27,7 +27,6 @@ use PHPStan\Type\VerbosityLevel;
 use function array_merge;
 use function count;
 use function sprintf;
-use function str_contains;
 
 final class RuleLevelHelper
 {
