@@ -1312,12 +1312,7 @@ final class NodeScopeResolver
 				$initScope = $condResult->getScope();
 				$condResultScope = $condResult->getScope();
 				$condTruthiness = ($this->treatPhpDocTypesAsCertain ? $condResultScope->getType($condExpr) : $condResultScope->getNativeType($condExpr))->toBoolean();
-				if ($condTruthiness instanceof ConstantBooleanType) {
-					$condTruthinessTrinary = TrinaryLogic::createFromBoolean($condTruthiness->getValue());
-				} else {
-					$condTruthinessTrinary = TrinaryLogic::createMaybe();
-				}
-				$isIterableAtLeastOnce = $isIterableAtLeastOnce->and($condTruthinessTrinary);
+				$isIterableAtLeastOnce = $isIterableAtLeastOnce->and($condTruthiness->isTrue());
 				$hasYield = $hasYield || $condResult->hasYield();
 				$throwPoints = array_merge($throwPoints, $condResult->getThrowPoints());
 				$impurePoints = array_merge($impurePoints, $condResult->getImpurePoints());
@@ -5054,7 +5049,7 @@ final class NodeScopeResolver
 			$valueToWrite = $scope->getType($assignedExpr);
 			$nativeValueToWrite = $scope->getNativeType($assignedExpr);
 			$originalValueToWrite = $valueToWrite;
-			$originalNativeValueToWrite = $valueToWrite;
+			$originalNativeValueToWrite = $nativeValueToWrite;
 
 			// 3. eval assigned expr
 			$result = $processExprCallback($scope);
@@ -5075,67 +5070,9 @@ final class NodeScopeResolver
 			}
 			$offsetValueType = $varType;
 			$offsetNativeValueType = $varNativeType;
-			$offsetValueTypeStack = [$offsetValueType];
-			$offsetValueNativeTypeStack = [$offsetNativeValueType];
-			foreach (array_slice($offsetTypes, 0, -1) as $offsetType) {
-				if ($offsetType === null) {
-					$offsetValueType = new ConstantArrayType([], []);
 
-				} else {
-					$offsetValueType = $offsetValueType->getOffsetValueType($offsetType);
-					if ($offsetValueType instanceof ErrorType) {
-						$offsetValueType = new ConstantArrayType([], []);
-					}
-				}
-
-				$offsetValueTypeStack[] = $offsetValueType;
-			}
-			foreach (array_slice($offsetNativeTypes, 0, -1) as $offsetNativeType) {
-				if ($offsetNativeType === null) {
-					$offsetNativeValueType = new ConstantArrayType([], []);
-
-				} else {
-					$offsetNativeValueType = $offsetNativeValueType->getOffsetValueType($offsetNativeType);
-					if ($offsetNativeValueType instanceof ErrorType) {
-						$offsetNativeValueType = new ConstantArrayType([], []);
-					}
-				}
-
-				$offsetValueNativeTypeStack[] = $offsetNativeValueType;
-			}
-
-			foreach (array_reverse($offsetTypes) as $i => $offsetType) {
-				/** @var Type $offsetValueType */
-				$offsetValueType = array_pop($offsetValueTypeStack);
-				if (!$offsetValueType instanceof MixedType) {
-					$types = [
-						new ArrayType(new MixedType(), new MixedType()),
-						new ObjectType(ArrayAccess::class),
-						new NullType(),
-					];
-					if ($offsetType !== null && $offsetType->isInteger()->yes()) {
-						$types[] = new StringType();
-					}
-					$offsetValueType = TypeCombinator::intersect($offsetValueType, TypeCombinator::union(...$types));
-				}
-				$valueToWrite = $offsetValueType->setOffsetValueType($offsetType, $valueToWrite, $i === 0);
-			}
-			foreach (array_reverse($offsetNativeTypes) as $i => $offsetNativeType) {
-				/** @var Type $offsetNativeValueType */
-				$offsetNativeValueType = array_pop($offsetValueNativeTypeStack);
-				if (!$offsetNativeValueType instanceof MixedType) {
-					$types = [
-						new ArrayType(new MixedType(), new MixedType()),
-						new ObjectType(ArrayAccess::class),
-						new NullType(),
-					];
-					if ($offsetNativeType !== null && $offsetNativeType->isInteger()->yes()) {
-						$types[] = new StringType();
-					}
-					$offsetNativeValueType = TypeCombinator::intersect($offsetNativeValueType, TypeCombinator::union(...$types));
-				}
-				$nativeValueToWrite = $offsetNativeValueType->setOffsetValueType($offsetNativeType, $nativeValueToWrite, $i === 0);
-			}
+			$valueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetTypes, $offsetValueType, $valueToWrite);
+			$nativeValueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetNativeTypes, $offsetNativeValueType, $nativeValueToWrite);
 
 			if ($varType->isArray()->yes() || !(new ObjectType(ArrayAccess::class))->isSuperTypeOf($varType)->yes()) {
 				if ($var instanceof Variable && is_string($var->name)) {
@@ -5406,6 +5343,46 @@ final class NodeScopeResolver
 		}
 
 		return new ExpressionResult($scope, $hasYield, $throwPoints, $impurePoints);
+	}
+
+	/**
+	 * @param list<Type|null> $offsetTypes
+	 */
+	private function produceArrayDimFetchAssignValueToWrite(array $offsetTypes, Type $offsetValueType, Type $valueToWrite): Type
+	{
+		$offsetValueTypeStack = [$offsetValueType];
+		foreach (array_slice($offsetTypes, 0, -1) as $offsetType) {
+			if ($offsetType === null) {
+				$offsetValueType = new ConstantArrayType([], []);
+
+			} else {
+				$offsetValueType = $offsetValueType->getOffsetValueType($offsetType);
+				if ($offsetValueType instanceof ErrorType) {
+					$offsetValueType = new ConstantArrayType([], []);
+				}
+			}
+
+			$offsetValueTypeStack[] = $offsetValueType;
+		}
+
+		foreach (array_reverse($offsetTypes) as $i => $offsetType) {
+			/** @var Type $offsetValueType */
+			$offsetValueType = array_pop($offsetValueTypeStack);
+			if (!$offsetValueType instanceof MixedType) {
+				$types = [
+					new ArrayType(new MixedType(), new MixedType()),
+					new ObjectType(ArrayAccess::class),
+					new NullType(),
+				];
+				if ($offsetType !== null && $offsetType->isInteger()->yes()) {
+					$types[] = new StringType();
+				}
+				$offsetValueType = TypeCombinator::intersect($offsetValueType, TypeCombinator::union(...$types));
+			}
+			$valueToWrite = $offsetValueType->setOffsetValueType($offsetType, $valueToWrite, $i === 0);
+		}
+
+		return $valueToWrite;
 	}
 
 	private function unwrapAssign(Expr $expr): Expr
