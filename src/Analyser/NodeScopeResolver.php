@@ -5073,10 +5073,10 @@ final class NodeScopeResolver
 
 			$valueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetTypes, $offsetValueType, $valueToWrite);
 
-			$nativeValueToWrite = $valueToWrite;
 			if (!$offsetValueType->equals($offsetNativeValueType) || !$valueToWrite->equals($nativeValueToWrite)) {
 				$nativeValueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetNativeTypes, $offsetNativeValueType, $nativeValueToWrite);
 			} else {
+				$rewritten = false;
 				foreach ($offsetTypes as $i => $offsetType) {
 					$offsetNativeType = $offsetNativeTypes[$i];
 					if ($offsetType === null) {
@@ -5093,7 +5093,12 @@ final class NodeScopeResolver
 					}
 
 					$nativeValueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetNativeTypes, $offsetNativeValueType, $nativeValueToWrite);
+					$rewritten = true;
 					break;
+				}
+
+				if (!$rewritten) {
+					$nativeValueToWrite = $valueToWrite;
 				}
 			}
 
