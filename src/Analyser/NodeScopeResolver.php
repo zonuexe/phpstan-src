@@ -5078,30 +5078,7 @@ final class NodeScopeResolver
 			$offsetNativeValueType = $varNativeType;
 
 			$valueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetTypes, $offsetValueType, $valueToWrite);
-
-			$nativeValueToWrite = $valueToWrite;
-			if (!$offsetValueType->equals($offsetNativeValueType) || !$valueToWrite->equals($nativeValueToWrite)) {
-				$nativeValueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetNativeTypes, $offsetNativeValueType, $nativeValueToWrite);
-			} else {
-				foreach ($offsetTypes as $i => $offsetType) {
-					$offsetNativeType = $offsetNativeTypes[$i];
-					if ($offsetType === null) {
-						if ($offsetNativeType !== null) {
-							throw new ShouldNotHappenException();
-						}
-
-						continue;
-					} elseif ($offsetNativeType === null) {
-						throw new ShouldNotHappenException();
-					}
-					if ($offsetType->equals($offsetNativeType)) {
-						continue;
-					}
-
-					$nativeValueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetNativeTypes, $offsetNativeValueType, $nativeValueToWrite);
-					break;
-				}
-			}
+			$nativeValueToWrite = $this->produceArrayDimFetchAssignValueToWrite($offsetNativeTypes, $offsetNativeValueType, $nativeValueToWrite);
 
 			if ($varType->isArray()->yes() || !(new ObjectType(ArrayAccess::class))->isSuperTypeOf($varType)->yes()) {
 				if ($var instanceof Variable && is_string($var->name)) {
