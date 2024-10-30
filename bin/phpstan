@@ -11,7 +11,7 @@ use PHPStan\Internal\ComposerHelper;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 (function () {
-	error_reporting(E_ALL);
+	error_reporting(E_ALL & ~E_DEPRECATED);
 	ini_set('display_errors', 'stderr');
 
 	define('__PHPSTAN_RUNNING__', true);
