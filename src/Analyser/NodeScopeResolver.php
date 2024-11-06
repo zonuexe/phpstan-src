@@ -1307,13 +1307,18 @@ final class NodeScopeResolver
 
 			$bodyScope = $initScope;
 			$isIterableAtLeastOnce = TrinaryLogic::createYes();
+			$lastCondExpr = $stmt->cond[count($stmt->cond) - 1] ?? null;
 			foreach ($stmt->cond as $condExpr) {
 				$condResult = $this->processExprNode($stmt, $condExpr, $bodyScope, static function (): void {
 				}, ExpressionContext::createDeep());
 				$initScope = $condResult->getScope();
 				$condResultScope = $condResult->getScope();
-				$condTruthiness = ($this->treatPhpDocTypesAsCertain ? $condResultScope->getType($condExpr) : $condResultScope->getNativeType($condExpr))->toBoolean();
-				$isIterableAtLeastOnce = $isIterableAtLeastOnce->and($condTruthiness->isTrue());
+
+				if ($condExpr === $lastCondExpr) {
+					$condTruthiness = ($this->treatPhpDocTypesAsCertain ? $condResultScope->getType($condExpr) : $condResultScope->getNativeType($condExpr))->toBoolean();
+					$isIterableAtLeastOnce = $isIterableAtLeastOnce->and($condTruthiness->isTrue());
+				}
+
 				$hasYield = $hasYield || $condResult->hasYield();
 				$throwPoints = array_merge($throwPoints, $condResult->getThrowPoints());
 				$impurePoints = array_merge($impurePoints, $condResult->getImpurePoints());
@@ -1325,8 +1330,8 @@ final class NodeScopeResolver
 				do {
 					$prevScope = $bodyScope;
 					$bodyScope = $bodyScope->mergeWith($initScope);
-					foreach ($stmt->cond as $condExpr) {
-						$bodyScope = $this->processExprNode($stmt, $condExpr, $bodyScope, static function (): void {
+					if ($lastCondExpr !== null) {
+						$bodyScope = $this->processExprNode($stmt, $lastCondExpr, $bodyScope, static function (): void {
 						}, ExpressionContext::createDeep())->getTruthyScope();
 					}
 					$bodyScopeResult = $this->processStmtNodes($stmt, $stmt->stmts, $bodyScope, static function (): void {
@@ -1356,8 +1361,8 @@ final class NodeScopeResolver
 			}
 
 			$bodyScope = $bodyScope->mergeWith($initScope);
-			foreach ($stmt->cond as $condExpr) {
-				$bodyScope = $this->processExprNode($stmt, $condExpr, $bodyScope, $nodeCallback, ExpressionContext::createDeep())->getTruthyScope();
+			if ($lastCondExpr !== null) {
+				$bodyScope = $this->processExprNode($stmt, $lastCondExpr, $bodyScope, $nodeCallback, ExpressionContext::createDeep())->getTruthyScope();
 			}
 
 			$finalScopeResult = $this->processStmtNodes($stmt, $stmt->stmts, $bodyScope, $nodeCallback, $context)->filterOutLoopExitPoints();
@@ -1371,8 +1376,8 @@ final class NodeScopeResolver
 				$loopScope = $this->processExprNode($stmt, $loopExpr, $loopScope, $nodeCallback, ExpressionContext::createTopLevel())->getScope();
 			}
 			$finalScope = $finalScope->generalizeWith($loopScope);
-			foreach ($stmt->cond as $condExpr) {
-				$finalScope = $finalScope->filterByFalseyValue($condExpr);
+			if ($lastCondExpr !== null) {
+				$finalScope = $finalScope->filterByFalseyValue($lastCondExpr);
 			}
 
 			foreach ($finalScopeResult->getExitPointsByType(Break_::class) as $breakExitPoint) {

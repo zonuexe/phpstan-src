@@ -86,6 +86,23 @@ class UnionType implements CompoundType
 		return $this->types;
 	}
 
+	/**
+	 * @param callable(Type $type): bool $filterCb
+	 */
+	public function filterTypes(callable $filterCb): Type
+	{
+		$newTypes = [];
+		foreach ($this->getTypes() as $innerType) {
+			if (!$filterCb($innerType)) {
+				continue;
+			}
+
+			$newTypes[] = $innerType;
+		}
+
+		return TypeCombinator::union(...$newTypes);
+	}
+
 	public function isNormalized(): bool
 	{
 		return $this->normalized;
