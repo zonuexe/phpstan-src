@@ -134,7 +134,12 @@ Improvements 🔧
 * Collected PHP errors cannot be ignored (https://github.com/phpstan/phpstan-src/commit/1d3f4313955dc6fa5c6ce60fa58afe765964e5b0)
 * Added missing rules to StubValidator (https://github.com/phpstan/phpstan-src/commit/bf19914cac1682d0eab8bf65a874ba368522311c)
 * Report precise offsets in errors ([#3504](https://github.com/phpstan/phpstan-src/pull/3504)), thanks @ruudk!
-
+* IntersectionType - always describe list as list (https://github.com/phpstan/phpstan-src/commit/f680629bc92e4dd5d7acd3bc60c9539fb047452b)
+* ArrayType::describe - explicit mixed should be stated explicitly (https://github.com/phpstan/phpstan-src/commit/6cf223840f89c972551f373ade9eea16d12e143b)
+* Refactor IntersectionType::describe() (https://github.com/phpstan/phpstan-src/commit/67fbfaee6585c2d47485dc2a159ee76d3ed02b35)
+* Remove inefficient caching from `PhpMethodReflection` and `PhpFunctionReflection::isVariadic()` ([#3534](https://github.com/phpstan/phpstan-src/pull/3534)), thanks @staabm!
+* Clean file cache from unused items (https://github.com/phpstan/phpstan-src/commit/466ad51740d629c9137a77dac28a676b71ef7197)
+* Journal for used generated containers (https://github.com/phpstan/phpstan-src/commit/57c65888e6372a4056afbbacc8207d411ea8559a)
 
 Bugfixes 🐛
 =====================
@@ -165,6 +170,8 @@ Function signature fixes 🤖
 * Update `Locale` signatures ([#2880](https://github.com/phpstan/phpstan-src/pull/2880)), thanks @devnix!
 * Improved the type of the `$mode` parameter for the `count()` ([#3190](https://github.com/phpstan/phpstan-src/pull/3190)), thanks @kuma3!* Check `filter_input*` type param type ([#2271](https://github.com/phpstan/phpstan-src/pull/2271)), thanks @herndlm!
 * Change `curl_setopt` function signature based on 2nd arg ([#1719](https://github.com/phpstan/phpstan-src/pull/1719)), thanks @staabm!
+* Support returning an array or a string in `count_chars()` ([#3596](https://github.com/phpstan/phpstan-src/pull/3596)), thanks @u01jmg3!
+* xdebug_get_function_stack: fix signature ([#3605](https://github.com/phpstan/phpstan-src/pull/3605)), thanks @janedbal!
 
 
 Internals 🔍
@@ -194,3 +201,8 @@ Internals 🔍
 * More interfaces that are not supposed to be implemented in userland (https://github.com/phpstan/phpstan-src/commit/778af2ed74ba59bfb2a69fd5b45821ccdb1107c9, https://github.com/phpstan/phpstan-src/commit/cb6ab5544a016c52f931fc390bcdf9c627819d8f)
 * Refactored `FunctionCallParametersCheck::check()` parameters (https://github.com/phpstan/phpstan-src/commit/710e09c41698efb1d8d3ae31791944077dbb9cc1)
 * Spread list usages in Reflection, Scope, Type ([#3530](https://github.com/phpstan/phpstan-src/pull/3530)), thanks @janedbal!
+* Remove $isFinal dead-code in PhpFunctionReflection ([#3545](https://github.com/phpstan/phpstan-src/pull/3545)), thanks @staabm!
+* Get rid of unnecessary `instanceof self` in `ConstantArrayType` ([#3552](https://github.com/phpstan/phpstan-src/pull/3552)), thanks @herndlm!
+* test: use `bashunit -a` exit_code to check for errors ([#3533](https://github.com/phpstan/phpstan-src/pull/3533)), thanks @Chemaclass!
+* Remove dead code ([#3575](https://github.com/phpstan/phpstan-src/pull/3575)), thanks @staabm!
+* Remove dead code in ConstantConditionRuleHelper ([#3597](https://github.com/phpstan/phpstan-src/pull/3597)), thanks @staabm!
