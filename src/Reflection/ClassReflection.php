@@ -1228,7 +1228,7 @@ final class ClassReflection
 	{
 		if ($this->isImmutable === null) {
 			$resolvedPhpDoc = $this->getResolvedPhpDoc();
-			$this->isImmutable = $resolvedPhpDoc !== null && $resolvedPhpDoc->isImmutable();
+			$this->isImmutable = $resolvedPhpDoc !== null && ($resolvedPhpDoc->isImmutable() || $resolvedPhpDoc->isReadOnly());
 
 			$parentClass = $this->getParentClass();
 			if ($parentClass !== null && !$this->isImmutable) {
