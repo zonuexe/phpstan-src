@@ -292,6 +292,48 @@ jobs:
           - script: |
               cd e2e/bug-11819
               ../../bin/phpstan
+          - script: |
+              cd e2e/composer-max-version
+              composer install
+              ../../bin/phpstan analyze test.php --level=0
+          - script: |
+              cd e2e/composer-min-max-version
+              composer install
+              ../../bin/phpstan analyze test.php --level=0
+          - script: |
+              cd e2e/composer-min-open-end-version
+              composer install
+              ../../bin/phpstan analyze test.php --level=0
+          - script: |
+              cd e2e/composer-min-version-v5
+              composer install --ignore-platform-reqs
+              ../../bin/phpstan analyze test.php --level=0
+          - script: |
+              cd e2e/composer-min-version-v7
+              composer install --ignore-platform-reqs
+              ../../bin/phpstan analyze test.php --level=0
+          - script: |
+              cd e2e/composer-min-version
+              composer install
+              ../../bin/phpstan analyze test.php --level=0
+          - script: |
+              cd e2e/composer-no-versions
+              composer install
+              ../../bin/phpstan analyze test.php --level=0
+          - script: |
+              cd e2e/composer-version-config-invalid
+              OUTPUT=$(../bashunit -a exit_code "1" ../../bin/phpstan)
+              echo "$OUTPUT"
+              ../bashunit -a contains 'Invalid configuration' "$OUTPUT"
+              ../bashunit -a contains 'Invalid PHP version range: phpVersion.max should be greater or equal to phpVersion.min.' "$OUTPUT"
+          - script: |
+              cd e2e/composer-version-config-patch
+              composer install --ignore-platform-reqs
+              ../../bin/phpstan analyze test.php --level=0
+          - script: |
+              cd e2e/composer-version-config
+              composer install
+              ../../bin/phpstan analyze test.php --level=0
 
     steps:
       - name: "Checkout"
@@ -307,6 +349,9 @@ jobs:
 
       - name: "Install dependencies"
         run: "composer install --no-interaction --no-progress"
+
+      - name: "Install bashunit"
+        run: "curl -s https://bashunit.typeddevs.com/install.sh | bash -s e2e/ 0.17.0"
 
       - name: "Test"
         run: ${{ matrix.script }}

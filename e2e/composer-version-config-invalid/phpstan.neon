@@ -1,0 +1,5 @@
+parameters:
+	phpVersion:
+		min: 80303
+		max: 80104
+

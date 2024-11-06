@@ -41,11 +41,26 @@ final class PhpVersion
 		return $this->versionId;
 	}
 
+	public function getMajorVersionId(): int
+	{
+		return (int) floor($this->versionId / 10000);
+	}
+
+	public function getMinorVersionId(): int
+	{
+		return (int) floor(($this->versionId % 10000) / 100);
+	}
+
+	public function getPatchVersionId(): int
+	{
+		return (int) floor($this->versionId % 100);
+	}
+
 	public function getVersionString(): string
 	{
-		$first = (int) floor($this->versionId / 10000);
-		$second = (int) floor(($this->versionId % 10000) / 100);
-		$third = (int) floor($this->versionId % 100);
+		$first = $this->getMajorVersionId();
+		$second = $this->getMinorVersionId();
+		$third = $this->getPatchVersionId();
 
 		return $first . '.' . $second . ($third !== 0 ? '.' . $third : '');
 	}

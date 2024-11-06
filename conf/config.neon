@@ -339,7 +339,13 @@ services:
 	-
 		class: PHPStan\Php\PhpVersionFactoryFactory
 		arguments:
-			versionId: %phpVersion%
+			phpVersion: %phpVersion%
+			composerAutoloaderProjectPaths: %composerAutoloaderProjectPaths%
+
+	-
+		class: PHPStan\Php\ComposerPhpVersionFactory
+		arguments:
+			phpVersion: %phpVersion%
 			composerAutoloaderProjectPaths: %composerAutoloaderProjectPaths%
 
 	-
