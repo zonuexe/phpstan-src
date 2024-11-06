@@ -1,0 +1,10 @@
+parameters:
+	level: 8
+	paths:
+		- src
+
+services:
+	-
+		class: Bug11857\RelationDynamicMethodReturnTypeExtension
+		tags:
+			- phpstan.broker.dynamicMethodReturnTypeExtension
