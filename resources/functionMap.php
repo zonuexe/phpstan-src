@@ -13272,7 +13272,7 @@ return [
 'xdebug_get_declared_vars' => ['array'],
 'xdebug_get_formatted_function_stack' => [''],
 'xdebug_get_function_count' => ['int'],
-'xdebug_get_function_stack' => ['array', 'message='=>'string', 'options='=>'int'],
+'xdebug_get_function_stack' => ['array', 'options='=>'array{local_vars?: bool, params_as_values?: bool, from_exception?: Throwable}'],
 'xdebug_get_headers' => ['array'],
 'xdebug_get_monitored_functions' => ['array'],
 'xdebug_get_profiler_filename' => ['string'],
