@@ -8,72 +8,78 @@ Major new features 🚀
 * **Level 10** - level 9 on steroids, treats all `mixed` types strictly, not just explicit `mixed`
 * **Array `list` type** ([#1751](https://github.com/phpstan/phpstan-src/pull/1751)), #3311, #8185, #6243, thanks @rvanvelzen!
     * Lists are arrays with sequential integer keys starting at 0
-* **Validate inline PHPDoc `@var` tag** type against native type (level 2) (https://github.com/phpstan/phpstan-src/commit/a69e3bc2f1e87f6da1e65d7935f1cc36bd5c42fe)
-    * Set [`reportWrongPhpDocTypeInVarTag`](https://phpstan.org/config-reference#reportwrongphpdoctypeinvartag) to `true` to have all types validated, not just native ones
-    * Use config option `reportAnyTypeWideningInVarTag: true` for stricter behaviour ([#2840](https://github.com/phpstan/phpstan-src/pull/2840)), thanks @janedbal!
 * **Lower memory consumption** thanks to breaking up of reference cycles
     * [Learn more »](https://phpstan.org/blog/preprocessing-ast-for-custom-rules)
     * In testing the memory consumption was reduced by 50–70 %.
 * **Enhancements in handling parameters passed by reference**
     * [Learn more on phpstan.org](https://phpstan.org/blog/enhancements-in-handling-parameters-passed-by-reference)
     * [#2941](https://github.com/phpstan/phpstan-src/pull/2941), thanks @ljmaskey!
-* Check too wide private property type (level 4) (https://github.com/phpstan/phpstan-src/commit/7453f4f75fae3d635063589467842aae29d88b54)
-* Always report always true conditions, except for last elseif and match arm (https://github.com/phpstan/phpstan-src/commit/565fb0f6da9cdc58e8686598015561a848693972)
-* Remove "unreachable branches" rules: UnreachableIfBranchesRule, UnreachableTernaryElseBranchRule, unreachable arm error in MatchExpressionRule
-    * Because "always true" is always reported, these are no longer needed
+* New rules (level 0):
+  * MagicConstantContextRule ([#2741](https://github.com/phpstan/phpstan-src/pull/2741)), #10099, thanks @staabm!
+  * MissingMagicSerializationMethodsRule ([#1711](https://github.com/phpstan/phpstan-src/pull/1711)), #7482, thanks @staabm!
+  * Check vprintf/vsprintf arguments against placeholder count ([#3126](https://github.com/phpstan/phpstan-src/pull/3126)), thanks @staabm!
+  * Check if required file exists ([#3294](https://github.com/phpstan/phpstan-src/pull/3294)), #3397, thanks @Bellangelo!
+  * Add `@readonly` rule that disallows default values ([#1391](https://github.com/phpstan/phpstan-src/pull/1391)), thanks @herndlm!
+  * Rule about `@phpstan-consistent-constructor` ([#1296](https://github.com/phpstan/phpstan-src/pull/1296)), thanks @canvural!
+  * Check code in custom PHPStan extensions for runtime reflection concepts like `is_a()` or `class_parents()` (https://github.com/phpstan/phpstan-src/commit/c4a662ac6c3ec63f063238880b243b5399c34fcc)
+  * Check code in custom PHPStan extensions for runtime reflection concepts like `new ReflectionMethod()` (https://github.com/phpstan/phpstan-src/commit/536306611cbb5877b6565755cd07b87f9ccfdf08)
+  * ApiInstanceofRule
+      * Report `instanceof` of classes not covered by backward compatibility promise (https://github.com/phpstan/phpstan-src/commit/ff4d02d62a7a2e2c4d928d48d31d49246dba7139)
+      * Report `instanceof` of classes covered by backward compatibility promise but where the assumption might change (https://github.com/phpstan/phpstan-src/commit/996bc69fa977aa64f601bd82b8a0ae39be0cbeef)
+  * Check that PHPStan class in class constant fetch is covered by backward compatibility promise (https://github.com/phpstan/phpstan-src/commit/9e007251ce61788f6a0319a53f1de6cf801ed233)
+  * Previously absent type checks:
+    * Check existing classes in `@phpstan-self-out` (https://github.com/phpstan/phpstan-src/commit/6838669976bf20232abde36ecdd52b1770fa50c9)
+    * Check nonexistent classes in local type aliases (https://github.com/phpstan/phpstan-src/commit/2485b2e9c129e789ec3b2d7db81ca30f87c63911)
+    * Check unresolvable types in local type aliases (https://github.com/phpstan/phpstan-src/commit/5f7d12b2fb2809525ab0e96eeae95093204ea4d3)
+    * Check generics in local type aliases (https://github.com/phpstan/phpstan-src/commit/5a2d4416d94ab77a2a2e7e1bfaba4c5ed2a13c25)
+    * Check existing classes in `@param-out` (https://github.com/phpstan/phpstan-src/commit/30c4b9e80f51af8b5f166ba3aae93d8409c9c0ea), #10260
+    * Check existing classes in `@param-closure-this` (https://github.com/phpstan/phpstan-src/commit/2fa539a39e06bcc3155b109fd8d246703ceb176d), #10933
+* New rules (level 2):
+  * **Validate inline PHPDoc `@var` tag** type against native type (https://github.com/phpstan/phpstan-src/commit/a69e3bc2f1e87f6da1e65d7935f1cc36bd5c42fe)
+    * Set [`reportWrongPhpDocTypeInVarTag`](https://phpstan.org/config-reference#reportwrongphpdoctypeinvartag) to `true` to have all types validated, not just native ones
+    * Use config option `reportAnyTypeWideningInVarTag: true` for stricter behaviour ([#2840](https://github.com/phpstan/phpstan-src/pull/2840)), thanks @janedbal!
+    * IncompatibleDefaultParameterTypeRule for closures (https://github.com/phpstan/phpstan-src/commit/0264f5bc48448c7e02a23b82eef4177d0617a82f)
+  * Checking truthiness of `@phpstan-pure` above functions and methods
+  * Check variance of template types in properties ([#2314](https://github.com/phpstan/phpstan-src/pull/2314)), thanks @jiripudil!
+  * Report narrowing `PHPStan\Type\Type` interface via `@var` (https://github.com/phpstan/phpstan-src/commit/713b98fb107213c28e3d8c8b4b43c5f5fc47c144), https://github.com/nunomaduro/larastan/issues/1567#issuecomment-1460445389
+  * Previously absent type checks:
+    * Check `@mixin` PHPDoc tag above traits (https://github.com/phpstan/phpstan-src/commit/0d0de946900adf4eb3c799b1b547567536e23147)
+    * Check `@extends`, `@implements`, `@use` for unresolvable types (https://github.com/phpstan/phpstan-src/commit/2bb528233edb75312614166e282776f279cf2018), #11552
+    * Check types in `@method` tags (https://github.com/phpstan/phpstan-src/commit/5b7e474680eaf33874b7ed6a227677adcbed9ca5)
+    * Check generics `@method` `@template` tags above traits (https://github.com/phpstan/phpstan-src/commit/aadbf62d3ae4517fc7a212b07130bedcef8d13ac)
+    * Check types in `@property` tags (https://github.com/phpstan/phpstan-src/commit/55ea2ae516df22a071ab873fdd6f748a3af0520e), #10752, #9356
+* New rule (level 3):
+  * ArrayUnpackingRule ([#856](https://github.com/phpstan/phpstan-src/pull/856)), thanks @canvural!
+* New rules (level 4):
+  * Check too wide private property type (https://github.com/phpstan/phpstan-src/commit/7453f4f75fae3d635063589467842aae29d88b54)
+  * LogicalXorConstantConditionRule (https://github.com/phpstan/phpstan-src/commit/3a12724fd636b1bcf36c22b36e8f765d97150895, https://github.com/phpstan/phpstan-src/commit/3b011f6524254dad0f16840fdcfdbe7421548617), #7539
+  * Check that each trait is used and analysed at least once (https://github.com/phpstan/phpstan-src/commit/c4d05276fb8605d6ac20acbe1cc5df31cd6c10b0)
+  * Report useless return values of function calls like `var_export` without `$return=true` ([#3225](https://github.com/phpstan/phpstan-src/pull/3225)), #11320, thanks @staabm!
+  * ConstantLooseComparisonRule (https://github.com/phpstan/phpstan-src/commit/6ebf2361a3c831dd105a815521889428c295dc9f)
+  * Check `new`/function call/method call/static method call on a separate line without any side effects even without `@phpstan-pure` PHPDoc tag on the declaration side
+      * https://github.com/phpstan/phpstan-src/commit/281a87d1ab61809076ecfa6dfc2cc86e3babe235
+      * [#3020](https://github.com/phpstan/phpstan-src/pull/3020), thanks @staabm!
+      * [#3022](https://github.com/phpstan/phpstan-src/pull/3022), thanks @staabm!
+      * [#3023](https://github.com/phpstan/phpstan-src/pull/3023), thanks @staabm!
+  * Always report always true conditions, except for last elseif and match arm (https://github.com/phpstan/phpstan-src/commit/565fb0f6da9cdc58e8686598015561a848693972)
+  * Remove "unreachable branches" rules: UnreachableIfBranchesRule, UnreachableTernaryElseBranchRule, unreachable arm error in MatchExpressionRule
+      * Because "always true" is always reported, these are no longer needed
+* New rules (level 5):
+  * Check preg_quote delimiter sanity ([#3252](https://github.com/phpstan/phpstan-src/pull/3252)), #11338, thanks @staabm!
+  * Rule for `call_user_func()` ([#2479](https://github.com/phpstan/phpstan-src/pull/2479)), thanks @staabm!
+  * Report useless `array_filter()` calls ([#1077](https://github.com/phpstan/phpstan-src/pull/1077)), #6840, thanks @leongersen!
+  * Report useless `array_values()` calls ([#2917](https://github.com/phpstan/phpstan-src/pull/2917)), thanks @kamil-zacek!
+  * Check array functions which require stringish values ([#3132](https://github.com/phpstan/phpstan-src/pull/3132)), #11141, #5848, #3694, #11111, thanks @schlndh!
+  * Check unresolvable parameters ([#1319](https://github.com/phpstan/phpstan-src/pull/1319)), thanks @rvanvelzen!
+  * Enforce `@no-named-arguments` (https://github.com/phpstan/phpstan-src/commit/74ba8c23696948f2647d880df72f375346f41010), #5968
+* New rules (level 6):
+  * Previously absent type checks:
+    * Check missing types in `@phpstan-self-out` (https://github.com/phpstan/phpstan-src/commit/892b319f25f04bc1b55c3d0063b607909612fe6d)
+    * Check missing types in local type aliases (https://github.com/phpstan/phpstan-src/commit/ce7ffaf02d624a7fb9d38f8e5dffc9739f1233fc)
+    * Check missing types in `@mixin` (https://github.com/phpstan/phpstan-src/commit/3175c81f26fd5bcb4a161b24e774921870ed2533)
 * New option: `polluteScopeWithBlock` (defaults to `true`, `false` in `phpstan-strict-rules`) (https://github.com/phpstan/phpstan-src/commit/946cf180c960930c2c42075d0f28ff9090507272)
-* Checking truthiness of `@phpstan-pure` above functions and methods
-* Check `new`/function call/method call/static method call on a separate line without any side effects even without `@phpstan-pure` PHPDoc tag on the declaration side
-    * https://github.com/phpstan/phpstan-src/commit/281a87d1ab61809076ecfa6dfc2cc86e3babe235
-    * [#3020](https://github.com/phpstan/phpstan-src/pull/3020), thanks @staabm!
-    * [#3022](https://github.com/phpstan/phpstan-src/pull/3022), thanks @staabm!
-    * [#3023](https://github.com/phpstan/phpstan-src/pull/3023), thanks @staabm!
-* LogicalXorConstantConditionRule (level 4) (https://github.com/phpstan/phpstan-src/commit/3a12724fd636b1bcf36c22b36e8f765d97150895, https://github.com/phpstan/phpstan-src/commit/3b011f6524254dad0f16840fdcfdbe7421548617), #7539
-* Check that each trait is used and analysed at least once (level 4) (https://github.com/phpstan/phpstan-src/commit/c4d05276fb8605d6ac20acbe1cc5df31cd6c10b0)
-* Check preg_quote delimiter sanity (level 5) ([#3252](https://github.com/phpstan/phpstan-src/pull/3252)), #11338, thanks @staabm!
-* MagicConstantContextRule (level 0) ([#2741](https://github.com/phpstan/phpstan-src/pull/2741)), #10099, thanks @staabm!
-* MissingMagicSerializationMethodsRule (level 0) ([#1711](https://github.com/phpstan/phpstan-src/pull/1711)), #7482, thanks @staabm!
-* Check vprintf/vsprintf arguments against placeholder count (level 0) ([#3126](https://github.com/phpstan/phpstan-src/pull/3126)), thanks @staabm!
-* Report useless return values of function calls like `var_export` without `$return=true` (level 4) ([#3225](https://github.com/phpstan/phpstan-src/pull/3225)), #11320, thanks @staabm!
-* Rule for `call_user_func()` (level 5) ([#2479](https://github.com/phpstan/phpstan-src/pull/2479)), thanks @staabm!
-* Report useless `array_filter()` calls (level 5) ([#1077](https://github.com/phpstan/phpstan-src/pull/1077)), #6840, thanks @leongersen!
-* Report useless `array_values()` calls (level 5) ([#2917](https://github.com/phpstan/phpstan-src/pull/2917)), thanks @kamil-zacek!
-* Check if required file exists (level 0) ([#3294](https://github.com/phpstan/phpstan-src/pull/3294)), #3397, thanks @Bellangelo!
-* ConstantLooseComparisonRule - level 4 (https://github.com/phpstan/phpstan-src/commit/6ebf2361a3c831dd105a815521889428c295dc9f)
-* Check array functions which require stringish values (level 5) ([#3132](https://github.com/phpstan/phpstan-src/pull/3132)), #11141, #5848, #3694, #11111, thanks @schlndh!
-* Check variance of template types in properties (level 2) ([#2314](https://github.com/phpstan/phpstan-src/pull/2314)), thanks @jiripudil!
-* ArrayUnpackingRule (level 3) ([#856](https://github.com/phpstan/phpstan-src/pull/856)), thanks @canvural!
-* Check unresolvable parameters (level 5) ([#1319](https://github.com/phpstan/phpstan-src/pull/1319)), thanks @rvanvelzen!
-* Enforce `@no-named-arguments` (level 5) (https://github.com/phpstan/phpstan-src/commit/74ba8c23696948f2647d880df72f375346f41010), #5968
 * Support `@readonly` property and `@immutable` class PHPDoc ([#1295](https://github.com/phpstan/phpstan-src/pull/1295), [#1335](https://github.com/phpstan/phpstan-src/pull/1335)), #4082, thanks @herndlm!
-* Add `@readonly` rule that disallows default values (level 0) ([#1391](https://github.com/phpstan/phpstan-src/pull/1391)), thanks @herndlm!
-* IncompatibleDefaultParameterTypeRule for closures (level 2) (https://github.com/phpstan/phpstan-src/commit/0264f5bc48448c7e02a23b82eef4177d0617a82f)
-* Added previously absent type checks (level 0)
-  * Check existing classes in `@phpstan-self-out` (https://github.com/phpstan/phpstan-src/commit/6838669976bf20232abde36ecdd52b1770fa50c9)
-  * Check nonexistent classes in local type aliases (https://github.com/phpstan/phpstan-src/commit/2485b2e9c129e789ec3b2d7db81ca30f87c63911)
-  * Check unresolvable types in local type aliases (https://github.com/phpstan/phpstan-src/commit/5f7d12b2fb2809525ab0e96eeae95093204ea4d3)
-  * Check generics in local type aliases (https://github.com/phpstan/phpstan-src/commit/5a2d4416d94ab77a2a2e7e1bfaba4c5ed2a13c25)
-  * Check existing classes in `@param-out` (https://github.com/phpstan/phpstan-src/commit/30c4b9e80f51af8b5f166ba3aae93d8409c9c0ea), #10260
-  * Check existing classes in `@param-closure-this` (https://github.com/phpstan/phpstan-src/commit/2fa539a39e06bcc3155b109fd8d246703ceb176d), #10933
-* Added previously absent type checks (level 2)
-  * Check `@mixin` PHPDoc tag above traits (https://github.com/phpstan/phpstan-src/commit/0d0de946900adf4eb3c799b1b547567536e23147)
-  * Check `@extends`, `@implements`, `@use` for unresolvable types (https://github.com/phpstan/phpstan-src/commit/2bb528233edb75312614166e282776f279cf2018), #11552
-  * Check types in `@method` tags (https://github.com/phpstan/phpstan-src/commit/5b7e474680eaf33874b7ed6a227677adcbed9ca5)
-  * Check generics `@method` `@template` tags above traits (https://github.com/phpstan/phpstan-src/commit/aadbf62d3ae4517fc7a212b07130bedcef8d13ac)
-  * Check types in `@property` tags (https://github.com/phpstan/phpstan-src/commit/55ea2ae516df22a071ab873fdd6f748a3af0520e), #10752, #9356
-* Added previously absent type checks (level 6)
-  * Check missing types in `@phpstan-self-out` (https://github.com/phpstan/phpstan-src/commit/892b319f25f04bc1b55c3d0063b607909612fe6d)
-  * Check missing types in local type aliases (https://github.com/phpstan/phpstan-src/commit/ce7ffaf02d624a7fb9d38f8e5dffc9739f1233fc)
-  * Check missing types in `@mixin` (https://github.com/phpstan/phpstan-src/commit/3175c81f26fd5bcb4a161b24e774921870ed2533)
-* Rule about `@phpstan-consistent-constructor` (level 0) ([#1296](https://github.com/phpstan/phpstan-src/pull/1296)), thanks @canvural!
-* Check code in custom PHPStan extensions for runtime reflection concepts like `is_a()` or `class_parents()` (level 0) (https://github.com/phpstan/phpstan-src/commit/c4a662ac6c3ec63f063238880b243b5399c34fcc)
-* Check code in custom PHPStan extensions for runtime reflection concepts like `new ReflectionMethod()` (level 0) (https://github.com/phpstan/phpstan-src/commit/536306611cbb5877b6565755cd07b87f9ccfdf08)
-* ApiInstanceofRule (level 0)
-    * Report `instanceof` of classes not covered by backward compatibility promise (https://github.com/phpstan/phpstan-src/commit/ff4d02d62a7a2e2c4d928d48d31d49246dba7139)
-    * Report `instanceof` of classes covered by backward compatibility promise but where the assumption might change (https://github.com/phpstan/phpstan-src/commit/996bc69fa977aa64f601bd82b8a0ae39be0cbeef)
-* Check that PHPStan class in class constant fetch is covered by backward compatibility promise (level 0) (https://github.com/phpstan/phpstan-src/commit/9e007251ce61788f6a0319a53f1de6cf801ed233)
 * Deprecate various `instanceof *Type` in favour of new methods on `Type` interface, (https://github.com/phpstan/phpstan-src/commit/436e6d3015cbeba4645d38bc7a6a865b9c6d7c74), learn more: [Why Is instanceof *Type Wrong and Getting Deprecated?](https://phpstan.org/blog/why-is-instanceof-type-wrong-and-getting-deprecated)
-* Report narrowing `PHPStan\Type\Type` interface via `@var` (https://github.com/phpstan/phpstan-src/commit/713b98fb107213c28e3d8c8b4b43c5f5fc47c144), https://github.com/nunomaduro/larastan/issues/1567#issuecomment-1460445389
 
 
 Improvements 🔧
