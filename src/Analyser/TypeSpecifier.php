@@ -340,8 +340,7 @@ final class TypeSpecifier
 					$scope,
 					new Expr\BinaryOp\NotIdentical($expr->right, new ConstFetch(new Name('false'))),
 					$context,
-					$rootExpr,
-				);
+				)->setRootExpr($expr);
 			}
 
 			if (
