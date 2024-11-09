@@ -51,4 +51,14 @@ class TooWideFunctionReturnTypehintRuleTest extends RuleTestCase
 		]);
 	}
 
+	public function testBug11980(): void
+	{
+		$this->analyse([__DIR__ . '/data/bug-11980-function.php'], [
+			[
+				'Function Bug11980Function\process2() never returns void so it can be removed from the return type.',
+				34,
+			],
+		]);
+	}
+
 }
