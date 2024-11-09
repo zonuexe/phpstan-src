@@ -108,7 +108,7 @@ class AcceptsResult
 			}
 		}
 
-		return new self($result, $reasons);
+		return new self($result, array_values(array_unique($reasons)));
 	}
 
 	public static function maxMin(self ...$operands): self
@@ -125,7 +125,7 @@ class AcceptsResult
 			}
 		}
 
-		return new self($result, $reasons);
+		return new self($result, array_values(array_unique($reasons)));
 	}
 
 }

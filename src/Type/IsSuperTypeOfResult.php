@@ -153,7 +153,7 @@ final class IsSuperTypeOfResult
 			}
 		}
 
-		return $reasons;
+		return array_values(array_unique($reasons));
 	}
 
 }
