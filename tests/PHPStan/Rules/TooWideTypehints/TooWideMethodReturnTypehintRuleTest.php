@@ -192,7 +192,6 @@ class TooWideMethodReturnTypehintRuleTest extends RuleTestCase
 	public function testBug11980(): void
 	{
 		$this->checkProtectedAndPublicMethods = true;
-		$this->alwaysCheckFinal = true;
 		$this->analyse([__DIR__ . '/data/bug-11980.php'], [
 			[
 				'Method Bug11980\Demo::process2() never returns void so it can be removed from the return type.',
