@@ -12,6 +12,7 @@ use PHPStan\Type\TypeCombinator;
 use PHPStan\Type\TypeUtils;
 use PHPStan\Type\UnionType;
 use PHPStan\Type\VerbosityLevel;
+use PHPStan\Type\VoidType;
 use function count;
 use function sprintf;
 
@@ -68,14 +69,11 @@ final class TooWideMethodReturnTypehintRule implements Rule
 		foreach ($returnStatements as $returnStatement) {
 			$returnNode = $returnStatement->getReturnNode();
 			if ($returnNode->expr === null) {
+				$returnTypes[] = new VoidType();
 				continue;
 			}
 
 			$returnTypes[] = $returnStatement->getScope()->getType($returnNode->expr);
-		}
-
-		if (count($returnTypes) === 0) {
-			return [];
 		}
 
 		$returnType = TypeCombinator::union(...$returnTypes);
