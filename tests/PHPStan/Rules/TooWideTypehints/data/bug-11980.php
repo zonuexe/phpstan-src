@@ -49,5 +49,26 @@ final class Demo
 			// Not a stand-alone statement.
 			return $end;
 		}
+
+		return 1;
+	}
+
+	/** @return int|void */
+	public function process3( int $code ) {
+
+		if ( $code === \T_CLASS ) {
+			return $this->process_class( $code );
+		}
+
+		$this->process_function( $code );
+	}
+
+	/** @return int */
+	public function process_class(int $code) {
+		return $code;
+	}
+
+	/** @return void */
+	public function process_function(int $code) {
 	}
 }

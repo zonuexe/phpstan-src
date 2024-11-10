@@ -56,6 +56,10 @@ final class TooWideFunctionReturnTypehintRule implements Rule
 			$returnTypes[] = $returnStatement->getScope()->getType($returnNode->expr);
 		}
 
+		if (!$statementResult->isAlwaysTerminating()) {
+			$returnTypes[] = new VoidType();
+		}
+
 		$returnType = TypeCombinator::union(...$returnTypes);
 
 		$messages = [];

@@ -76,6 +76,10 @@ final class TooWideMethodReturnTypehintRule implements Rule
 			$returnTypes[] = $returnStatement->getScope()->getType($returnNode->expr);
 		}
 
+		if (!$statementResult->isAlwaysTerminating()) {
+			$returnTypes[] = new VoidType();
+		}
+
 		$returnType = TypeCombinator::union(...$returnTypes);
 		if (
 			!$method->isPrivate()
