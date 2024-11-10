@@ -1402,7 +1402,7 @@ final class NodeScopeResolver
 				}
 			} else {
 				if (!$this->polluteScopeWithLoopInitialAssignments) {
-					$finalScope = $scope->processAlwaysIterableForScopeWithoutPollute($finalScope, $initScope);
+					$finalScope = $finalScope->mergeWith($scope);
 				}
 			}
 
