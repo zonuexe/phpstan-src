@@ -271,6 +271,45 @@ class RichParserTest extends PHPStanTestCase
 				2 => ['identifier'],
 			],
 		];
+
+		yield [
+			'<?php' . PHP_EOL .
+			PHP_EOL .
+			'class MyClass {' . PHP_EOL .
+			'  use MyTrait;' . PHP_EOL .
+			PHP_EOL .
+			'  public mixed $myProperty;' . PHP_EOL .
+			PHP_EOL .
+			'  function myFunction(): void {' . PHP_EOL .
+			'    // @phpstan-ignore variable.undefined' . PHP_EOL .
+			'    $this->myProperty = $b;' . PHP_EOL .
+			'  }' . PHP_EOL .
+			'}',
+			[
+				10 => ['variable.undefined'],
+			],
+		];
+
+		yield [
+			'<?php' . PHP_EOL .
+			PHP_EOL .
+			'trait MyTrait {' . PHP_EOL .
+			'}' . PHP_EOL .
+			PHP_EOL .
+			'class MyClass {' . PHP_EOL .
+			'  use MyTrait;' . PHP_EOL .
+			PHP_EOL .
+			'  public mixed $myProperty;' . PHP_EOL .
+			PHP_EOL .
+			'  function myFunction(): void {' . PHP_EOL .
+			'    // @phpstan-ignore variable.undefined' . PHP_EOL .
+			'    $this->myProperty = $b;' . PHP_EOL .
+			'  }' . PHP_EOL .
+			'}',
+			[
+				13 => ['variable.undefined'],
+			],
+		];
 	}
 
 	/**

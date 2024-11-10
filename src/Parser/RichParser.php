@@ -98,7 +98,12 @@ final class RichParser implements Parser
 		}
 
 		foreach ($traitCollectingVisitor->traits as $trait) {
-			$trait->setAttribute('linesToIgnore', array_filter($linesToIgnore, static fn (int $line): bool => $line >= $trait->getStartLine() && $line <= $trait->getEndLine(), ARRAY_FILTER_USE_KEY));
+			$preexisting = $trait->getAttribute('linesToIgnore', []);
+			$filteredLinesToIgnore = array_filter($linesToIgnore, static fn (int $line): bool => $line >= $trait->getStartLine() && $line <= $trait->getEndLine(), ARRAY_FILTER_USE_KEY);
+			foreach ($preexisting as $line => $ignores) {
+				$filteredLinesToIgnore[$line] = $ignores;
+			}
+			$trait->setAttribute('linesToIgnore', $filteredLinesToIgnore);
 		}
 
 		return $nodes;
