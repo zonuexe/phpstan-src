@@ -46,4 +46,25 @@ function process2($tokens, $stackPtr)
 		// Not a stand-alone statement.
 		return $end;
 	}
+
+	return 1;
+}
+
+/** @return int|void */
+function process3( int $code ) {
+
+	if ( $code === \T_CLASS ) {
+		return process_class( $code );
+	}
+
+	process_function( $code );
+}
+
+/** @return int */
+function process_class(int $code) {
+	return $code;
+}
+
+/** @return void */
+function process_function(int $code) {
 }
