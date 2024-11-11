@@ -146,6 +146,7 @@ Improvements 🔧
 * Remove inefficient caching from `PhpMethodReflection` and `PhpFunctionReflection::isVariadic()` ([#3534](https://github.com/phpstan/phpstan-src/pull/3534)), thanks @staabm!
 * Clean file cache from unused items (https://github.com/phpstan/phpstan-src/commit/466ad51740d629c9137a77dac28a676b71ef7197)
 * Journal for used generated containers (https://github.com/phpstan/phpstan-src/commit/57c65888e6372a4056afbbacc8207d411ea8559a)
+* Use named argument in error for variadic types ([#3611](https://github.com/phpstan/phpstan-src/pull/3611)), thanks @ruudk!
 
 Bugfixes 🐛
 =====================
@@ -210,5 +211,6 @@ Internals 🔍
 * Remove $isFinal dead-code in PhpFunctionReflection ([#3545](https://github.com/phpstan/phpstan-src/pull/3545)), thanks @staabm!
 * Get rid of unnecessary `instanceof self` in `ConstantArrayType` ([#3552](https://github.com/phpstan/phpstan-src/pull/3552)), thanks @herndlm!
 * test: use `bashunit -a` exit_code to check for errors ([#3533](https://github.com/phpstan/phpstan-src/pull/3533)), thanks @Chemaclass!
+* Upgrade bashunit:0.18.0 for e2e tests ([#3614](https://github.com/phpstan/phpstan-src/pull/3614)), thanks @Chemaclass!
 * Remove dead code ([#3575](https://github.com/phpstan/phpstan-src/pull/3575)), thanks @staabm!
 * Remove dead code in ConstantConditionRuleHelper ([#3597](https://github.com/phpstan/phpstan-src/pull/3597)), thanks @staabm!
