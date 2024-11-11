@@ -814,6 +814,10 @@ class OverridingMethodRuleTest extends RuleTestCase
 
 	public function testSimpleXmlElementChildClass(): void
 	{
+		if (PHP_VERSION_ID < 80000) {
+			$this->markTestSkipped('Test requires PHP 8.0.');
+		}
+
 		$this->phpVersionId = PHP_VERSION_ID;
 		$this->analyse([__DIR__ . '/data/simple-xml-element-child.php'], []);
 	}
