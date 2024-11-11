@@ -4672,16 +4672,16 @@
         },
         {
             "name": "phpstan/phpstan-deprecation-rules",
-            "version": "2.0.x-dev",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-deprecation-rules.git",
-                "reference": "392bbe7be54b00fbe945fede6a8ef543216f3b9c"
+                "reference": "81833b5787e2e8f451b31218875e29e4ed600ab2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-deprecation-rules/zipball/392bbe7be54b00fbe945fede6a8ef543216f3b9c",
-                "reference": "392bbe7be54b00fbe945fede6a8ef543216f3b9c",
+                "url": "https://api.github.com/repos/phpstan/phpstan-deprecation-rules/zipball/81833b5787e2e8f451b31218875e29e4ed600ab2",
+                "reference": "81833b5787e2e8f451b31218875e29e4ed600ab2",
                 "shasum": ""
             },
             "require": {
@@ -4693,7 +4693,6 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpunit/phpunit": "^9.6"
             },
-            "default-branch": true,
             "type": "phpstan-extension",
             "extra": {
                 "phpstan": {
@@ -4714,22 +4713,22 @@
             "description": "PHPStan rules for detecting usage of deprecated classes, methods, properties, constants and traits.",
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-deprecation-rules/issues",
-                "source": "https://github.com/phpstan/phpstan-deprecation-rules/tree/2.0.x"
+                "source": "https://github.com/phpstan/phpstan-deprecation-rules/tree/2.0.0"
             },
-            "time": "2024-09-26T12:14:06+00:00"
+            "time": "2024-10-26T16:04:11+00:00"
         },
         {
             "name": "phpstan/phpstan-nette",
-            "version": "2.0.x-dev",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-nette.git",
-                "reference": "c903386c4e3d1d25a57f66458476bfb6347f1c66"
+                "reference": "cacb6983bbdf44d5c3a7222e5ca74f61f8531806"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-nette/zipball/c903386c4e3d1d25a57f66458476bfb6347f1c66",
-                "reference": "c903386c4e3d1d25a57f66458476bfb6347f1c66",
+                "url": "https://api.github.com/repos/phpstan/phpstan-nette/zipball/cacb6983bbdf44d5c3a7222e5ca74f61f8531806",
+                "reference": "cacb6983bbdf44d5c3a7222e5ca74f61f8531806",
                 "shasum": ""
             },
             "require": {
@@ -4746,6 +4745,7 @@
             },
             "require-dev": {
                 "nette/application": "^3.0",
+                "nette/di": "^3.1.10",
                 "nette/forms": "^3.0",
                 "nette/utils": "^2.3.0 || ^3.0.0",
                 "php-parallel-lint/php-parallel-lint": "^1.2",
@@ -4753,7 +4753,6 @@
                 "phpstan/phpstan-strict-rules": "^2.0",
                 "phpunit/phpunit": "^9.6"
             },
-            "default-branch": true,
             "type": "phpstan-extension",
             "extra": {
                 "phpstan": {
@@ -4775,22 +4774,22 @@
             "description": "Nette Framework class reflection extension for PHPStan",
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-nette/issues",
-                "source": "https://github.com/phpstan/phpstan-nette/tree/2.0.x"
+                "source": "https://github.com/phpstan/phpstan-nette/tree/2.0.0"
             },
-            "time": "2024-09-24T16:09:34+00:00"
+            "time": "2024-10-26T16:03:48+00:00"
         },
         {
             "name": "phpstan/phpstan-phpunit",
-            "version": "2.0.x-dev",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-phpunit.git",
-                "reference": "09e2d3b470bdda02824c626735153dfd962e3f29"
+                "reference": "3cc855474263ad6220dfa49167cbea34ca1dd300"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-phpunit/zipball/09e2d3b470bdda02824c626735153dfd962e3f29",
-                "reference": "09e2d3b470bdda02824c626735153dfd962e3f29",
+                "url": "https://api.github.com/repos/phpstan/phpstan-phpunit/zipball/3cc855474263ad6220dfa49167cbea34ca1dd300",
+                "reference": "3cc855474263ad6220dfa49167cbea34ca1dd300",
                 "shasum": ""
             },
             "require": {
@@ -4805,7 +4804,6 @@
                 "phpstan/phpstan-strict-rules": "^2.0",
                 "phpunit/phpunit": "^9.6"
             },
-            "default-branch": true,
             "type": "phpstan-extension",
             "extra": {
                 "phpstan": {
@@ -4827,22 +4825,22 @@
             "description": "PHPUnit extensions and rules for PHPStan",
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-phpunit/issues",
-                "source": "https://github.com/phpstan/phpstan-phpunit/tree/2.0.x"
+                "source": "https://github.com/phpstan/phpstan-phpunit/tree/2.0.0"
             },
-            "time": "2024-09-24T16:07:03+00:00"
+            "time": "2024-10-14T03:16:27+00:00"
         },
         {
             "name": "phpstan/phpstan-strict-rules",
-            "version": "2.0.x-dev",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-strict-rules.git",
-                "reference": "e208c9311872047b903511e2e03cb0df795014b0"
+                "reference": "a4a6a08bd4a461e516b9c3b8fdbf0f1883b34158"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/e208c9311872047b903511e2e03cb0df795014b0",
-                "reference": "e208c9311872047b903511e2e03cb0df795014b0",
+                "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/a4a6a08bd4a461e516b9c3b8fdbf0f1883b34158",
+                "reference": "a4a6a08bd4a461e516b9c3b8fdbf0f1883b34158",
                 "shasum": ""
             },
             "require": {
@@ -4855,7 +4853,6 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpunit/phpunit": "^9.6"
             },
-            "default-branch": true,
             "type": "phpstan-extension",
             "extra": {
                 "phpstan": {
@@ -4876,9 +4873,9 @@
             "description": "Extra strict and opinionated rules for PHPStan",
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-strict-rules/issues",
-                "source": "https://github.com/phpstan/phpstan-strict-rules/tree/2.0.x"
+                "source": "https://github.com/phpstan/phpstan-strict-rules/tree/2.0.0"
             },
-            "time": "2024-09-30T19:35:25+00:00"
+            "time": "2024-10-26T16:04:33+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
