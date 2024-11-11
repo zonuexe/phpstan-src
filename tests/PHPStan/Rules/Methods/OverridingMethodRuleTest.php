@@ -812,4 +812,10 @@ class OverridingMethodRuleTest extends RuleTestCase
 		$this->analyse([__DIR__ . '/data/bug-9524.php'], []);
 	}
 
+	public function testSimpleXmlElementChildClass(): void
+	{
+		$this->phpVersionId = PHP_VERSION_ID;
+		$this->analyse([__DIR__ . '/data/simple-xml-element-child.php'], []);
+	}
+
 }
