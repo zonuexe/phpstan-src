@@ -211,9 +211,6 @@ jobs:
         env:
           GPG_ID: ${{ steps.import-gpg.outputs.fingerprint }}
 
-      - name: "cp UPGRADING.md"
-        run: cp phpstan-src/UPGRADING.md phpstan-dist/UPGRADING.md
-
       - name: "Verify PHAR"
         working-directory: phpstan-dist
         run: "gpg --verify phpstan.phar.asc"
