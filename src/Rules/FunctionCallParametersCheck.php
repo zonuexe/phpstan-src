@@ -325,7 +325,10 @@ final class FunctionCallParametersCheck
 			if ($this->checkArgumentTypes) {
 				$parameterType = TypeUtils::resolveLateResolvableTypes($parameter->getType());
 
-				if (!$parameter->passedByReference()->createsNewVariable() || !$isBuiltin) {
+				if (
+					!$parameter->passedByReference()->createsNewVariable()
+					|| (!$isBuiltin && !$argumentValueType instanceof ErrorType)
+				) {
 					$accepts = $this->ruleLevelHelper->accepts($parameterType, $argumentValueType, $scope->isDeclareStrictTypes());
 
 					if (!$accepts->result) {
