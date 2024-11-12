@@ -22,6 +22,10 @@ use const PHP_VERSION_ID;
 class ClassAttributesRuleTest extends RuleTestCase
 {
 
+	private bool $checkExplicitMixed = false;
+
+	private bool $checkImplicitMixed = false;
+
 	protected function getRule(): Rule
 	{
 		$reflectionProvider = $this->createReflectionProvider();
@@ -29,7 +33,7 @@ class ClassAttributesRuleTest extends RuleTestCase
 			new AttributesCheck(
 				$reflectionProvider,
 				new FunctionCallParametersCheck(
-					new RuleLevelHelper($reflectionProvider, true, false, true, false, false, true, false),
+					new RuleLevelHelper($reflectionProvider, true, false, true, $this->checkExplicitMixed, $this->checkImplicitMixed, true, false),
 					new NullsafeCheck(),
 					new PhpVersion(80000),
 					new UnresolvableTypeHelper(),
@@ -146,6 +150,22 @@ class ClassAttributesRuleTest extends RuleTestCase
 	public function testAllowDynamicPropertiesAttribute(): void
 	{
 		$this->analyse([__DIR__ . '/data/allow-dynamic-properties-attribute.php'], []);
+	}
+
+	public function testBug12011(): void
+	{
+		if (PHP_VERSION_ID < 80300) {
+			$this->markTestSkipped('Test requires PHP 8.3.');
+		}
+
+		$this->checkExplicitMixed = true;
+		$this->checkImplicitMixed = true;
+		$this->analyse([__DIR__ . '/data/bug-12011.php'], [
+			[
+				'Parameter #1 $name of attribute class Bug12011\Table constructor expects string|null, int given.',
+				23,
+			],
+		]);
 	}
 
 }
