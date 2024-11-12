@@ -313,7 +313,11 @@ final class FunctionCallParametersCheck
 
 				if (
 					!$parameter->passedByReference()->createsNewVariable()
-					|| (!$isBuiltin && $this->checkUnresolvableParameterTypes) // bleeding edge only
+					|| (
+						!$isBuiltin
+						&& $this->checkUnresolvableParameterTypes // bleeding edge only
+						&& !$argumentValueType instanceof ErrorType
+					)
 				) {
 					$accepts = $this->ruleLevelHelper->acceptsWithReason($parameterType, $argumentValueType, $scope->isDeclareStrictTypes());
 
