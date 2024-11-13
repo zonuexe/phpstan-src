@@ -3,17 +3,10 @@
 namespace PHPStan\Php;
 
 use Composer\Semver\VersionParser;
-use Nette\Utils\Json;
-use Nette\Utils\JsonException;
 use Nette\Utils\Strings;
-use PHPStan\File\CouldNotReadFileException;
-use PHPStan\File\FileReader;
-use PHPStan\ShouldNotHappenException;
+use PHPStan\Internal\ComposerHelper;
 use function count;
 use function end;
-use function is_array;
-use function is_file;
-use function is_int;
 use function is_string;
 use function min;
 use function sprintf;
@@ -29,11 +22,9 @@ final class ComposerPhpVersionFactory
 
 	/**
 	 * @param string[] $composerAutoloaderProjectPaths
-	 * @param int|array{min: int, max: int}|null $phpVersion
 	 */
 	public function __construct(
 		private array $composerAutoloaderProjectPaths,
-		private int|array|null $phpVersion,
 	)
 	{
 	}
@@ -41,23 +32,6 @@ final class ComposerPhpVersionFactory
 	private function initializeVersions(): void
 	{
 		$this->initialized = true;
-
-		$phpVersion = $this->phpVersion;
-
-		if (is_int($phpVersion)) {
-			throw new ShouldNotHappenException();
-		}
-
-		if (is_array($phpVersion)) {
-			if ($phpVersion['max'] < $phpVersion['min']) {
-				throw new ShouldNotHappenException('Invalid PHP version range: phpVersion.max should be greater or equal to phpVersion.min.');
-			}
-
-			$this->minVersion = new PhpVersion($phpVersion['min']);
-			$this->maxVersion = new PhpVersion($phpVersion['max']);
-
-			return;
-		}
 
 		// don't limit minVersion... PHPStan can analyze even PHP5
 		$this->maxVersion = new PhpVersion(PhpVersionFactory::MAX_PHP_VERSION);
@@ -87,10 +61,6 @@ final class ComposerPhpVersionFactory
 
 	public function getMinVersion(): ?PhpVersion
 	{
-		if (is_int($this->phpVersion)) {
-			return null;
-		}
-
 		if ($this->initialized === false) {
 			$this->initializeVersions();
 		}
@@ -100,10 +70,6 @@ final class ComposerPhpVersionFactory
 
 	public function getMaxVersion(): ?PhpVersion
 	{
-		if (is_int($this->phpVersion)) {
-			return null;
-		}
-
 		if ($this->initialized === false) {
 			$this->initializeVersions();
 		}
@@ -114,21 +80,18 @@ final class ComposerPhpVersionFactory
 	private function getComposerRequireVersion(): ?string
 	{
 		$composerPhpVersion = null;
+
 		if (count($this->composerAutoloaderProjectPaths) > 0) {
-			$composerJsonPath = end($this->composerAutoloaderProjectPaths) . '/composer.json';
-			if (is_file($composerJsonPath)) {
-				try {
-					$composerJsonContents = FileReader::read($composerJsonPath);
-					$composer = Json::decode($composerJsonContents, Json::FORCE_ARRAY);
-					$requiredVersion = $composer['require']['php'] ?? null;
-					if (is_string($requiredVersion)) {
-						$composerPhpVersion = $requiredVersion;
-					}
-				} catch (CouldNotReadFileException | JsonException) {
-					// pass
+			$composer = ComposerHelper::getComposerConfig(end($this->composerAutoloaderProjectPaths));
+			if ($composer !== null) {
+				$requiredVersion = $composer['require']['php'] ?? null;
+
+				if (is_string($requiredVersion)) {
+					$composerPhpVersion = $requiredVersion;
 				}
 			}
 		}
+
 		return $composerPhpVersion;
 	}
 
