@@ -66,3 +66,21 @@ function doTyped3(array $vars): void
 
 	assertVariableCertainty(TrinaryLogic::createNo(), $none);
 }
+
+function doTyped4(): void
+{
+	extract(['foo' => 42]);
+
+	assertVariableCertainty(TrinaryLogic::createYes(), $foo);
+	assertType('42', $foo);
+}
+
+
+function doTyped5(): void
+{
+	$foo = ['foo' => 42];
+	extract($foo);
+
+	assertVariableCertainty(TrinaryLogic::createYes(), $foo);
+	assertType('42', $foo);
+}
