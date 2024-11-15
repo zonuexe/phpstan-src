@@ -1340,4 +1340,9 @@ final class TypeCombinator
 		return self::remove($type, StaticTypeFactory::falsey());
 	}
 
+	public static function removeTruthy(Type $type): Type
+	{
+		return self::remove($type, StaticTypeFactory::truthy());
+	}
+
 }
