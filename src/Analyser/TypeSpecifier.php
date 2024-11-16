@@ -1903,7 +1903,7 @@ final class TypeSpecifier
 					new ConstantStringType(''),
 					new ConstantArrayType([], []),
 				];
-				return $this->create($exprNode, new UnionType($trueTypes), $context, false, $scope, $rootExpr);
+				return $this->create($exprNode, new UnionType($trueTypes), $context, $scope)->setRootExpr($expr);
 			}
 
 			if (!$context->null() && $constantType->getValue() === false) {
@@ -1943,7 +1943,7 @@ final class TypeSpecifier
 						new ConstantStringType('0'),
 					];
 				}
-				return $this->create($exprNode, new UnionType($trueTypes), $context, false, $scope, $rootExpr);
+				return $this->create($exprNode, new UnionType($trueTypes), $context, $scope)->setRootExpr($expr);
 			}
 
 			if (!$context->null() && $constantType->getValue() === '') {
@@ -1965,7 +1965,7 @@ final class TypeSpecifier
 						new ConstantStringType(''),
 					];
 				}
-				return $this->create($exprNode, new UnionType($trueTypes), $context, false, $scope, $rootExpr);
+				return $this->create($exprNode, new UnionType($trueTypes), $context, $scope)->setRootExpr($expr);
 			}
 
 			if (
