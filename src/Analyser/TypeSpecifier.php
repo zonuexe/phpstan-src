@@ -43,6 +43,7 @@ use PHPStan\Type\ConditionalTypeForParameter;
 use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\Constant\ConstantArrayTypeBuilder;
 use PHPStan\Type\Constant\ConstantBooleanType;
+use PHPStan\Type\Constant\ConstantFloatType;
 use PHPStan\Type\Constant\ConstantIntegerType;
 use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\ConstantScalarType;
@@ -1610,7 +1611,7 @@ final class TypeSpecifier
 	}
 
 	/**
-	 * @return array{Expr, ConstantScalarType}|null
+	 * @return array{Expr, ConstantScalarType, Type}|null
 	 */
 	private function findTypeExpressionsFromBinaryOperation(Scope $scope, Node\Expr\BinaryOp $binaryOperation): ?array
 	{
@@ -1632,13 +1633,13 @@ final class TypeSpecifier
 			&& !$rightExpr instanceof ConstFetch
 			&& !$rightExpr instanceof ClassConstFetch
 		) {
-			return [$binaryOperation->right, $leftType];
+			return [$binaryOperation->right, $leftType, $rightType];
 		} elseif (
 			$rightType instanceof ConstantScalarType
 			&& !$leftExpr instanceof ConstFetch
 			&& !$leftExpr instanceof ClassConstFetch
 		) {
-			return [$binaryOperation->left, $rightType];
+			return [$binaryOperation->left, $rightType, $leftType];
 		}
 
 		return null;
@@ -1949,7 +1950,21 @@ final class TypeSpecifier
 		if ($expressions !== null) {
 			$exprNode = $expressions[0];
 			$constantType = $expressions[1];
-			if (!$context->null() && ($constantType->getValue() === false || $constantType->getValue() === null)) {
+			$otherType = $expressions[2];
+
+			if (!$context->null() && $constantType->getValue() === null) {
+				$trueTypes = [
+					new NullType(),
+					new ConstantBooleanType(false),
+					new ConstantIntegerType(0),
+					new ConstantFloatType(0.0),
+					new ConstantStringType(''),
+					new ConstantArrayType([], []),
+				];
+				return $this->create($exprNode, new UnionType($trueTypes), $context, false, $scope, $rootExpr);
+			}
+
+			if (!$context->null() && $constantType->getValue() === false) {
 				return $this->specifyTypesInCondition(
 					$scope,
 					$exprNode,
@@ -1965,6 +1980,52 @@ final class TypeSpecifier
 					$context->true() ? TypeSpecifierContext::createTruthy() : TypeSpecifierContext::createTruthy()->negate(),
 					$rootExpr,
 				);
+			}
+
+			if (!$context->null() && $constantType->getValue() === 0 && !$otherType->isInteger()->yes() && !$otherType->isBoolean()->yes()) {
+				/* There is a difference between php 7.x and 8.x on the equality
+				 * behavior between zero and the empty string, so to be conservative
+				 * we leave it untouched regardless of the language version */
+				if ($context->true()) {
+					$trueTypes = [
+						new NullType(),
+						new ConstantBooleanType(false),
+						new ConstantIntegerType(0),
+						new ConstantFloatType(0.0),
+						new StringType(),
+					];
+				} else {
+					$trueTypes = [
+						new NullType(),
+						new ConstantBooleanType(false),
+						new ConstantIntegerType(0),
+						new ConstantFloatType(0.0),
+						new ConstantStringType('0'),
+					];
+				}
+				return $this->create($exprNode, new UnionType($trueTypes), $context, false, $scope, $rootExpr);
+			}
+
+			if (!$context->null() && $constantType->getValue() === '') {
+				/* There is a difference between php 7.x and 8.x on the equality
+				 * behavior between zero and the empty string, so to be conservative
+				 * we leave it untouched regardless of the language version */
+				if ($context->true()) {
+					$trueTypes = [
+						new NullType(),
+						new ConstantBooleanType(false),
+						new ConstantIntegerType(0),
+						new ConstantFloatType(0.0),
+						new ConstantStringType(''),
+					];
+				} else {
+					$trueTypes = [
+						new NullType(),
+						new ConstantBooleanType(false),
+						new ConstantStringType(''),
+					];
+				}
+				return $this->create($exprNode, new UnionType($trueTypes), $context, false, $scope, $rootExpr);
 			}
 
 			if (
@@ -2060,11 +2121,13 @@ final class TypeSpecifier
 
 	public function resolveIdentical(Expr\BinaryOp\Identical $expr, Scope $scope, TypeSpecifierContext $context, ?Expr $rootExpr): SpecifiedTypes
 	{
+		// Normalize to: fn() === expr
 		$leftExpr = $expr->left;
 		$rightExpr = $expr->right;
 		if ($rightExpr instanceof FuncCall && !$leftExpr instanceof FuncCall) {
 			[$leftExpr, $rightExpr] = [$rightExpr, $leftExpr];
 		}
+
 		$unwrappedLeftExpr = $leftExpr;
 		if ($leftExpr instanceof AlwaysRememberedExpr) {
 			$unwrappedLeftExpr = $leftExpr->getExpr();
@@ -2073,8 +2136,10 @@ final class TypeSpecifier
 		if ($rightExpr instanceof AlwaysRememberedExpr) {
 			$unwrappedRightExpr = $rightExpr->getExpr();
 		}
+
 		$rightType = $scope->getType($rightExpr);
 
+		// (count($a) === $b)
 		if (
 			!$context->null()
 			&& $unwrappedLeftExpr instanceof FuncCall
@@ -2139,6 +2204,7 @@ final class TypeSpecifier
 			}
 		}
 
+		// strlen($a) === $b
 		if (
 			!$context->null()
 			&& $unwrappedLeftExpr instanceof FuncCall
@@ -2175,6 +2241,7 @@ final class TypeSpecifier
 			}
 		}
 
+		// preg_match($a) === $b
 		if (
 			$context->true()
 			&& $unwrappedLeftExpr instanceof FuncCall
@@ -2190,6 +2257,7 @@ final class TypeSpecifier
 			);
 		}
 
+		// get_class($a) === 'Foo'
 		if (
 			$context->true()
 			&& $unwrappedLeftExpr instanceof FuncCall
@@ -2209,6 +2277,7 @@ final class TypeSpecifier
 			}
 		}
 
+		// get_class($a) === 'Foo'
 		if (
 			$context->truthy()
 			&& $unwrappedLeftExpr instanceof FuncCall
@@ -2289,6 +2358,7 @@ final class TypeSpecifier
 			}
 		}
 
+		// $a::class === 'Foo'
 		if (
 			$context->true() &&
 			$unwrappedLeftExpr instanceof ClassConstFetch &&
@@ -2311,6 +2381,8 @@ final class TypeSpecifier
 		}
 
 		$leftType = $scope->getType($leftExpr);
+
+		// 'Foo' === $a::class
 		if (
 			$context->true() &&
 			$unwrappedRightExpr instanceof ClassConstFetch &&
@@ -2356,7 +2428,11 @@ final class TypeSpecifier
 		$types = null;
 		if (
 			count($leftType->getFiniteTypes()) === 1
-			|| ($context->true() && $leftType->isConstantValue()->yes() && !$rightType->equals($leftType) && $rightType->isSuperTypeOf($leftType)->yes())
+			|| (
+				$context->true()
+				&& $leftType->isConstantValue()->yes()
+				&& !$rightType->equals($leftType)
+				&& $rightType->isSuperTypeOf($leftType)->yes())
 		) {
 			$types = $this->create(
 				$rightExpr,
@@ -2379,7 +2455,12 @@ final class TypeSpecifier
 		}
 		if (
 			count($rightType->getFiniteTypes()) === 1
-			|| ($context->true() && $rightType->isConstantValue()->yes() && !$leftType->equals($rightType) && $leftType->isSuperTypeOf($rightType)->yes())
+			|| (
+				$context->true()
+				&& $rightType->isConstantValue()->yes()
+				&& !$leftType->equals($rightType)
+				&& $leftType->isSuperTypeOf($rightType)->yes()
+			)
 		) {
 			$leftTypes = $this->create(
 				$leftExpr,
