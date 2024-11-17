@@ -22,6 +22,7 @@ final class RealClassClassConstantReflection implements ClassConstantReflection
 		private ?string $deprecatedDescription,
 		private bool $isDeprecated,
 		private bool $isInternal,
+		private bool $isFinal,
 	)
 	{
 	}
@@ -105,7 +106,7 @@ final class RealClassClassConstantReflection implements ClassConstantReflection
 
 	public function isFinal(): bool
 	{
-		return $this->reflection->isFinal();
+		return $this->isFinal || $this->reflection->isFinal();
 	}
 
 	public function isDeprecated(): TrinaryLogic

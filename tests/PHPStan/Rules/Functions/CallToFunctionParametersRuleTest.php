@@ -21,12 +21,14 @@ class CallToFunctionParametersRuleTest extends RuleTestCase
 
 	private bool $checkExplicitMixed = false;
 
+	private bool $checkImplicitMixed = false;
+
 	protected function getRule(): Rule
 	{
 		$broker = $this->createReflectionProvider();
 		return new CallToFunctionParametersRule(
 			$broker,
-			new FunctionCallParametersCheck(new RuleLevelHelper($broker, true, false, true, $this->checkExplicitMixed, false, false), new NullsafeCheck(), new PhpVersion(80000), new UnresolvableTypeHelper(), new PropertyReflectionFinder(), true, true, true, true),
+			new FunctionCallParametersCheck(new RuleLevelHelper($broker, true, false, true, $this->checkExplicitMixed, $this->checkImplicitMixed, false), new NullsafeCheck(), new PhpVersion(80000), new UnresolvableTypeHelper(), new PropertyReflectionFinder(), true, true, true, true),
 		);
 	}
 
@@ -1908,6 +1910,13 @@ class CallToFunctionParametersRuleTest extends RuleTestCase
 	public function testBug11759(): void
 	{
 		$this->analyse([__DIR__ . '/data/bug-11759.php'], []);
+	}
+
+	public function testBug12051(): void
+	{
+		$this->checkExplicitMixed = true;
+		$this->checkImplicitMixed = true;
+		$this->analyse([__DIR__ . '/data/bug-12051.php'], []);
 	}
 
 }
