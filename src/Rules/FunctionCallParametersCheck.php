@@ -53,7 +53,6 @@ final class FunctionCallParametersCheck
 	}
 
 	/**
-	 * @param Node\Expr\FuncCall|Node\Expr\MethodCall|Node\Expr\StaticCall|Node\Expr\New_ $funcCall
 	 * @param 'attribute'|'callable'|'method'|'staticMethod'|'function'|'new' $nodeType
 	 * @return list<IdentifierRuleError>
 	 */
@@ -61,7 +60,7 @@ final class FunctionCallParametersCheck
 		ParametersAcceptor $parametersAcceptor,
 		Scope $scope,
 		bool $isBuiltin,
-		$funcCall,
+		Node\Expr\FuncCall|Node\Expr\MethodCall|Node\Expr\StaticCall|Node\Expr\New_ $funcCall,
 		string $nodeType,
 		TrinaryLogic $acceptsNamedArguments,
 		string $singleInsufficientParameterMessage,
