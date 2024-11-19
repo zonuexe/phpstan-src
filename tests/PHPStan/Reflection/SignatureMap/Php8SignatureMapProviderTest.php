@@ -206,7 +206,7 @@ class Php8SignatureMapProviderTest extends PHPStanTestCase
 						'variadic' => false,
 					],
 				],
-				new UnionType([
+				new BenevolentUnionType([
 					new ObjectType('Closure'),
 					new NullType(),
 				]),
