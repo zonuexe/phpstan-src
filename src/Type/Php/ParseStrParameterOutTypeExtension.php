@@ -53,7 +53,7 @@ final class ParseStrParameterOutTypeExtension implements FunctionParameterOutTyp
 
 		return new ArrayType(
 			new UnionType([new StringType(), new IntegerType()]),
-			new UnionType([new ArrayType(new MixedType(), new MixedType()), $valueType]),
+			new UnionType([new ArrayType(new MixedType(), new MixedType(true)), $valueType]),
 		);
 	}
 
