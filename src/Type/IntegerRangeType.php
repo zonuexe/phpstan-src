@@ -13,6 +13,7 @@ use PHPStan\TrinaryLogic;
 use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Constant\ConstantBooleanType;
 use PHPStan\Type\Constant\ConstantIntegerType;
 use function array_filter;
@@ -467,6 +468,7 @@ class IntegerRangeType extends IntegerType implements CompoundType
 			return new IntersectionType([
 				new StringType(),
 				new AccessoryLowercaseStringType(),
+				new AccessoryUppercaseStringType(),
 				new AccessoryNumericStringType(),
 				new AccessoryNonFalsyStringType(),
 			]);
@@ -475,6 +477,7 @@ class IntegerRangeType extends IntegerType implements CompoundType
 		return new IntersectionType([
 			new StringType(),
 			new AccessoryLowercaseStringType(),
+			new AccessoryUppercaseStringType(),
 			new AccessoryNumericStringType(),
 		]);
 	}
