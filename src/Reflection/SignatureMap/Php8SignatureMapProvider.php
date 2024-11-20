@@ -16,6 +16,7 @@ use PHPStan\Reflection\BetterReflection\SourceLocator\FileNodesFetcher;
 use PHPStan\Reflection\InitializerExprContext;
 use PHPStan\Reflection\InitializerExprTypeResolver;
 use PHPStan\Reflection\PassedByReference;
+use PHPStan\Reflection\ReflectionProvider\ReflectionProviderProvider;
 use PHPStan\ShouldNotHappenException;
 use PHPStan\Type\FileTypeMapper;
 use PHPStan\Type\MixedType;
@@ -50,6 +51,7 @@ final class Php8SignatureMapProvider implements SignatureMapProvider
 		private FileTypeMapper $fileTypeMapper,
 		private PhpVersion $phpVersion,
 		private InitializerExprTypeResolver $initializerExprTypeResolver,
+		private ReflectionProviderProvider $reflectionProviderProvider,
 	)
 	{
 		$this->map = new Php8StubsMap($phpVersion->getVersionId());
@@ -392,6 +394,13 @@ final class Php8SignatureMapProvider implements SignatureMapProvider
 				$phpDocReturnType = $phpDoc->getReturnTag()->getType();
 			}
 		}
+
+		$classReflection = null;
+		if ($className !== null) {
+			$reflectionProvider = $this->reflectionProviderProvider->getReflectionProvider();
+			$classReflection = $reflectionProvider->getClass($className);
+		}
+
 		$parameters = [];
 		$variadic = false;
 		foreach ($function->getParams() as $param) {
@@ -399,7 +408,7 @@ final class Php8SignatureMapProvider implements SignatureMapProvider
 			if (!$name instanceof Variable || !is_string($name->name)) {
 				throw new ShouldNotHappenException();
 			}
-			$parameterType = ParserNodeTypeToPHPStanType::resolve($param->type, null);
+			$parameterType = ParserNodeTypeToPHPStanType::resolve($param->type, $classReflection);
 			$parameters[] = new ParameterSignature(
 				$name->name,
 				$param->default !== null || $param->variadic,
@@ -417,7 +426,7 @@ final class Php8SignatureMapProvider implements SignatureMapProvider
 			$variadic = $variadic || $param->variadic;
 		}
 
-		$returnType = ParserNodeTypeToPHPStanType::resolve($function->getReturnType(), null);
+		$returnType = ParserNodeTypeToPHPStanType::resolve($function->getReturnType(), $classReflection);
 
 		return new FunctionSignature(
 			$parameters,
