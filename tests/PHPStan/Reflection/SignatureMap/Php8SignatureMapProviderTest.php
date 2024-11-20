@@ -10,6 +10,7 @@ use PHPStan\Reflection\BetterReflection\SourceLocator\FileNodesFetcher;
 use PHPStan\Reflection\InitializerExprTypeResolver;
 use PHPStan\Reflection\Native\NativeParameterReflection;
 use PHPStan\Reflection\PassedByReference;
+use PHPStan\Reflection\ReflectionProvider\ReflectionProviderProvider;
 use PHPStan\Testing\PHPStanTestCase;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\BenevolentUnionType;
@@ -162,6 +163,7 @@ class Php8SignatureMapProviderTest extends PHPStanTestCase
 			self::getContainer()->getByType(FileTypeMapper::class),
 			$phpVersion,
 			self::getContainer()->getByType(InitializerExprTypeResolver::class),
+			self::getContainer()->getByType(ReflectionProviderProvider::class),
 		);
 	}
 
