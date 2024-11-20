@@ -218,6 +218,12 @@ return [
 
 			return str_replace(sprintf('use %s\\PhpParser;', $prefix), 'use PhpParser;', $content);
 		},
+		function (string $filePath, string $prefix, string $content): string {
+			if ($filePath !== 'vendor/fidry/cpu-core-counter/src/Finder/WindowsRegistryLogicalFinder.php') {
+				return $content;
+			}
+			return str_replace(sprintf('%s\\\\reg query', $prefix), 'reg query', $content);
+		},
 	],
 	'exclude-namespaces' => [
 		'PHPStan',
