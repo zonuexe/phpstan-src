@@ -468,6 +468,11 @@ trait LateResolvableTypeTrait
 		return $this->resolve()->isLowercaseString();
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return $this->resolve()->isUppercaseString();
+	}
+
 	public function isClassStringType(): TrinaryLogic
 	{
 		return $this->resolve()->isClassStringType();

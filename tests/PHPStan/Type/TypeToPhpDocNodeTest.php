@@ -9,6 +9,7 @@ use PHPStan\Type\Accessory\AccessoryLiteralStringType;
 use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Accessory\NonEmptyArrayType;
 use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\Constant\ConstantBooleanType;
@@ -224,6 +225,11 @@ class TypeToPhpDocNodeTest extends PHPStanTestCase
 		];
 
 		yield [
+			new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+			'uppercase-string',
+		];
+
+		yield [
 			new IntersectionType([new StringType(), new AccessoryNonEmptyStringType()]),
 			'non-empty-string',
 		];
@@ -331,6 +337,11 @@ class TypeToPhpDocNodeTest extends PHPStanTestCase
 		yield [
 			new ConstantStringType("foo\nbar\nbaz"),
 			'(literal-string & lowercase-string & non-falsy-string)',
+		];
+
+		yield [
+			new ConstantStringType("FOO\nBAR\nBAZ"),
+			'(literal-string & non-falsy-string & uppercase-string)',
 		];
 
 		yield [

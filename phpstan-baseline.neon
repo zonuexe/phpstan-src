@@ -718,6 +718,11 @@ parameters:
 		-
 			message: "#^Doing instanceof PHPStan\\\\Type\\\\IntersectionType is error\\-prone and deprecated\\.$#"
 			count: 1
+			path: src/Type/Accessory/AccessoryUppercaseStringType.php
+
+		-
+			message: "#^Doing instanceof PHPStan\\\\Type\\\\IntersectionType is error\\-prone and deprecated\\.$#"
+			count: 1
 			path: src/Type/Accessory/HasMethodType.php
 
 		-

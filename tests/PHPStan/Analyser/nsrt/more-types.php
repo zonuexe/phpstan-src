@@ -19,6 +19,8 @@ class Foo
 	 * @param non-empty-mixed $nonEmptyMixed
 	 * @param lowercase-string $lowercaseString
 	 * @param non-empty-lowercase-string $nonEmptyLowercaseString
+	 * @param uppercase-string $uppercaseString
+	 * @param non-empty-uppercase-string $nonEmptyUppercaseString
 	 */
 	public function doFoo(
 		$pureCallable,
@@ -32,6 +34,8 @@ class Foo
 		$nonEmptyMixed,
 		$lowercaseString,
 		$nonEmptyLowercaseString,
+		$uppercaseString,
+		$nonEmptyUppercaseString,
 	): void
 	{
 		assertType('pure-callable(): mixed', $pureCallable);
@@ -45,6 +49,8 @@ class Foo
 		assertType("mixed~(0|0.0|''|'0'|array{}|false|null)", $nonEmptyMixed);
 		assertType('lowercase-string', $lowercaseString);
 		assertType('lowercase-string&non-empty-string', $nonEmptyLowercaseString);
+		assertType('uppercase-string', $uppercaseString);
+		assertType('non-empty-string&uppercase-string', $nonEmptyUppercaseString);
 	}
 
 }

@@ -87,9 +87,9 @@ class Foo {
 		assertType('non-falsy-string', escapeshellarg($nonFalsey));
 		assertType('non-falsy-string', escapeshellcmd($nonFalsey));
 
-		assertType('non-falsy-string', strtoupper($nonFalsey));
+		assertType('non-falsy-string&uppercase-string', strtoupper($nonFalsey));
 		assertType('lowercase-string&non-falsy-string', strtolower($nonFalsey));
-		assertType('non-falsy-string', mb_strtoupper($nonFalsey));
+		assertType('non-falsy-string&uppercase-string', mb_strtoupper($nonFalsey));
 		assertType('lowercase-string&non-falsy-string', mb_strtolower($nonFalsey));
 		assertType('non-falsy-string', lcfirst($nonFalsey));
 		assertType('non-falsy-string', ucfirst($nonFalsey));

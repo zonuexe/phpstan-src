@@ -24,6 +24,7 @@ use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\ClassStringType;
 use PHPStan\Type\CompoundType;
 use PHPStan\Type\ConstantScalarType;
@@ -51,6 +52,7 @@ use function is_numeric;
 use function key;
 use function strlen;
 use function strtolower;
+use function strtoupper;
 use function substr;
 use function substr_count;
 
@@ -356,6 +358,11 @@ class ConstantStringType extends StringType implements ConstantScalarType
 		return TrinaryLogic::createFromBoolean(strtolower($this->value) === $this->value);
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return TrinaryLogic::createFromBoolean(strtoupper($this->value) === $this->value);
+	}
+
 	public function hasOffsetValueType(Type $offsetType): TrinaryLogic
 	{
 		if ($offsetType->isInteger()->yes()) {
@@ -465,6 +472,10 @@ class ConstantStringType extends StringType implements ConstantScalarType
 
 			if (strtolower($this->getValue()) === $this->getValue()) {
 				$accessories[] = new AccessoryLowercaseStringType();
+			}
+
+			if (strtoupper($this->getValue()) === $this->getValue()) {
+				$accessories[] = new AccessoryUppercaseStringType();
 			}
 
 			return new IntersectionType($accessories);

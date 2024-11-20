@@ -392,10 +392,10 @@ function fooHeadersSent() {
 
 function fooMbParseStr() {
 	mb_parse_str("foo=bar", $output);
-	assertType('array<string, array|string>', $output);
+	assertType('array<int|string, array|lowercase-string>', $output);
 
 	mb_parse_str('email=mail@example.org&city=town&x=1&y[g]=3&f=1.23', $output);
-	assertType('array<string, array|string>', $output);
+	assertType('array<int|string, array|lowercase-string>', $output);
 }
 
 function fooPreg()

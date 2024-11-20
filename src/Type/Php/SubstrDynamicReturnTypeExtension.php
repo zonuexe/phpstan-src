@@ -9,6 +9,7 @@ use PHPStan\Reflection\FunctionReflection;
 use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Constant\ConstantBooleanType;
 use PHPStan\Type\Constant\ConstantIntegerType;
 use PHPStan\Type\Constant\ConstantStringType;
@@ -98,6 +99,9 @@ final class SubstrDynamicReturnTypeExtension implements DynamicFunctionReturnTyp
 		$isNotEmpty = false;
 		if ($string->isLowercaseString()->yes()) {
 			$accessoryTypes[] = new AccessoryLowercaseStringType();
+		}
+		if ($string->isUppercaseString()->yes()) {
+			$accessoryTypes[] = new AccessoryUppercaseStringType();
 		}
 		if ($string->isNonEmptyString()->yes() && ($negativeOffset || $zeroOffset && $positiveLength)) {
 			$isNotEmpty = true;

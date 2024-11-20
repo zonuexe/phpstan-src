@@ -23,6 +23,7 @@ use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Accessory\HasMethodType;
 use PHPStan\Type\Accessory\HasOffsetType;
 use PHPStan\Type\Accessory\HasOffsetValueType;
@@ -2011,6 +2012,54 @@ class TypeCombinatorTest extends PHPStanTestCase
 			],
 			[
 				[
+					new StringType(),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				StringType::class,
+				'string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryNumericStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				UnionType::class,
+				'numeric-string|uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryNonFalsyStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				UnionType::class,
+				'non-falsy-string|uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryNonEmptyStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				UnionType::class,
+				'non-empty-string|uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryLiteralStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				UnionType::class,
+				'literal-string|uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryLowercaseStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				UnionType::class,
+				'lowercase-string|uppercase-string',
+			],
+			[
+				[
 					TemplateTypeFactory::create(
 						TemplateTypeScope::createWithFunction('doFoo'),
 						'T',
@@ -3934,6 +3983,54 @@ class TypeCombinatorTest extends PHPStanTestCase
 				IntersectionType::class,
 				'literal-string&lowercase-string',
 			],
+			[
+				[
+					new StringType(),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				IntersectionType::class,
+				'uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryNumericStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				IntersectionType::class,
+				'numeric-string&uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryNonFalsyStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				IntersectionType::class,
+				'non-falsy-string&uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryNonEmptyStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				IntersectionType::class,
+				'non-empty-string&uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryLiteralStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				IntersectionType::class,
+				'literal-string&uppercase-string',
+			],
+			[
+				[
+					new IntersectionType([new StringType(), new AccessoryLowercaseStringType()]),
+					new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+				],
+				IntersectionType::class,
+				'lowercase-string&uppercase-string',
+			],
 		];
 
 		if (PHP_VERSION_ID < 80100) {
@@ -4422,6 +4519,23 @@ class TypeCombinatorTest extends PHPStanTestCase
 			],
 			ConstantStringType::class,
 			'\'foo\'',
+		];
+
+		yield [
+			[
+				new ConstantStringType('foo'),
+				new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+			],
+			NeverType::class,
+			'*NEVER*=implicit',
+		];
+		yield [
+			[
+				new ConstantStringType('FOO'),
+				new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]),
+			],
+			ConstantStringType::class,
+			'\'FOO\'',
 		];
 	}
 

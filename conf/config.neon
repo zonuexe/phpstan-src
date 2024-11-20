@@ -1565,6 +1565,11 @@ services:
 			- phpstan.dynamicFunctionThrowTypeExtension
 
 	-
+		class: PHPStan\Type\Php\ParseStrParameterOutTypeExtension
+		tags:
+			- phpstan.functionParameterOutTypeExtension
+
+	-
 		class: PHPStan\Type\Php\PregMatchTypeSpecifyingExtension
 		tags:
 			- phpstan.typeSpecifier.functionTypeSpecifyingExtension
@@ -1771,6 +1776,11 @@ services:
 
 	-
 		class: PHPStan\Type\Php\TriggerErrorDynamicReturnTypeExtension
+		tags:
+			- phpstan.broker.dynamicFunctionReturnTypeExtension
+
+	-
+		class: PHPStan\Type\Php\TrimFunctionDynamicReturnTypeExtension
 		tags:
 			- phpstan.broker.dynamicFunctionReturnTypeExtension
 

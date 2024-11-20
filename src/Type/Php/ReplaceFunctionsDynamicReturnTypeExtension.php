@@ -9,6 +9,7 @@ use PHPStan\Reflection\ParametersAcceptorSelector;
 use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Constant\ConstantArrayTypeBuilder;
 use PHPStan\Type\DynamicFunctionReturnTypeExtension;
 use PHPStan\Type\IntersectionType;
@@ -98,6 +99,10 @@ final class ReplaceFunctionsDynamicReturnTypeExtension implements DynamicFunctio
 
 				if ($subjectArgumentType->isLowercaseString()->yes() && $replaceArgumentType->isLowercaseString()->yes()) {
 					$accessories[] = new AccessoryLowercaseStringType();
+				}
+
+				if ($subjectArgumentType->isUppercaseString()->yes() && $replaceArgumentType->isUppercaseString()->yes()) {
+					$accessories[] = new AccessoryUppercaseStringType();
 				}
 
 				if (count($accessories) > 0) {

@@ -1140,6 +1140,54 @@ class StrictComparisonOfDifferentTypesRuleTest extends RuleTestCase
 		$this->analyse([__DIR__ . '/data/lowercase-string.php'], $errors);
 	}
 
+	public function testUppercaseString(): void
+	{
+		$errors = [
+			[
+				"Strict comparison using === between uppercase-string and 'ab' will always evaluate to false.",
+				10,
+				'Because the type is coming from a PHPDoc, you can turn off this check by setting <fg=cyan>treatPhpDocTypesAsCertain: false</> in your <fg=cyan>%configurationFile%</>.',
+			],
+			[
+				"Strict comparison using === between 'ab' and uppercase-string will always evaluate to false.",
+				11,
+				'Because the type is coming from a PHPDoc, you can turn off this check by setting <fg=cyan>treatPhpDocTypesAsCertain: false</> in your <fg=cyan>%configurationFile%</>.',
+			],
+			[
+				"Strict comparison using !== between 'ab' and uppercase-string will always evaluate to true.",
+				12,
+				'Because the type is coming from a PHPDoc, you can turn off this check by setting <fg=cyan>treatPhpDocTypesAsCertain: false</> in your <fg=cyan>%configurationFile%</>.',
+			],
+			[
+				"Strict comparison using === between uppercase-string and 'aBc' will always evaluate to false.",
+				15,
+				'Because the type is coming from a PHPDoc, you can turn off this check by setting <fg=cyan>treatPhpDocTypesAsCertain: false</> in your <fg=cyan>%configurationFile%</>.',
+			],
+			[
+				"Strict comparison using !== between uppercase-string and 'aBc' will always evaluate to true.",
+				16,
+				'Because the type is coming from a PHPDoc, you can turn off this check by setting <fg=cyan>treatPhpDocTypesAsCertain: false</> in your <fg=cyan>%configurationFile%</>.',
+			],
+		];
+
+		if (PHP_VERSION_ID < 80000) {
+			$errors[] = [
+				"Strict comparison using === between uppercase-string|false and 'ab' will always evaluate to false.",
+				28,
+				'Because the type is coming from a PHPDoc, you can turn off this check by setting <fg=cyan>treatPhpDocTypesAsCertain: false</> in your <fg=cyan>%configurationFile%</>.',
+			];
+		} else {
+			$errors[] = [
+				"Strict comparison using === between uppercase-string and 'ab' will always evaluate to false.",
+				28,
+				'Because the type is coming from a PHPDoc, you can turn off this check by setting <fg=cyan>treatPhpDocTypesAsCertain: false</> in your <fg=cyan>%configurationFile%</>.',
+			];
+		}
+
+		$this->checkAlwaysTrueStrictComparison = true;
+		$this->analyse([__DIR__ . '/data/uppercase-string.php'], $errors);
+	}
+
 	public function testBug10493(): void
 	{
 		$this->checkAlwaysTrueStrictComparison = true;

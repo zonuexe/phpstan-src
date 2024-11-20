@@ -11,6 +11,7 @@ use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Constant\ConstantIntegerType;
 use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\DynamicFunctionReturnTypeExtension;
@@ -96,6 +97,10 @@ final class StrRepeatFunctionReturnTypeExtension implements DynamicFunctionRetur
 
 		if ($inputType->isLowercaseString()->yes()) {
 			$accessoryTypes[] = new AccessoryLowercaseStringType();
+		}
+
+		if ($inputType->isUppercaseString()->yes()) {
+			$accessoryTypes[] = new AccessoryUppercaseStringType();
 		}
 
 		if (count($accessoryTypes) > 0) {

@@ -9,6 +9,7 @@ use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\DynamicFunctionReturnTypeExtension;
 use PHPStan\Type\IntersectionType;
@@ -23,6 +24,7 @@ use function in_array;
 use function is_callable;
 use function mb_check_encoding;
 use const MB_CASE_LOWER;
+use const MB_CASE_UPPER;
 
 final class StrCaseFunctionsReturnTypeExtension implements DynamicFunctionReturnTypeExtension
 {
@@ -70,6 +72,8 @@ final class StrCaseFunctionsReturnTypeExtension implements DynamicFunctionReturn
 		$modes = [];
 		$keepLowercase = false;
 		$forceLowercase = false;
+		$keepUppercase = false;
+		$forceUppercase = false;
 
 		if ($fnName === 'mb_convert_case') {
 			$modeType = $scope->getType($args[1]->value);
@@ -85,6 +89,16 @@ final class StrCaseFunctionsReturnTypeExtension implements DynamicFunctionReturn
 					3, // MB_CASE_FOLD,
 					7, // MB_CASE_FOLD_SIMPLE
 				])) === 0;
+				$forceUppercase = count(array_diff($modes, [
+					MB_CASE_UPPER,
+					4, // MB_CASE_UPPER_SIMPLE
+				])) === 0;
+				$keepUppercase = count(array_diff($modes, [
+					MB_CASE_UPPER,
+					4, // MB_CASE_UPPER_SIMPLE
+					3, // MB_CASE_FOLD,
+					7, // MB_CASE_FOLD_SIMPLE
+				])) === 0;
 			}
 		} elseif (in_array($fnName, ['ucwords', 'mb_convert_kana'], true)) {
 			if (count($args) >= 2) {
@@ -97,6 +111,10 @@ final class StrCaseFunctionsReturnTypeExtension implements DynamicFunctionReturn
 			$forceLowercase = true;
 		} elseif (in_array($fnName, ['lcfirst', 'mb_lcfirst'], true)) {
 			$keepLowercase = true;
+		} elseif (in_array($fnName, ['strtoupper', 'mb_strtoupper'], true)) {
+			$forceUppercase = true;
+		} elseif (in_array($fnName, ['ucfirst', 'mb_ucfirst'], true)) {
+			$keepUppercase = true;
 		}
 
 		$constantStrings = array_map(static fn ($type) => $type->getValue(), $argType->getConstantStrings());
@@ -126,6 +144,9 @@ final class StrCaseFunctionsReturnTypeExtension implements DynamicFunctionReturn
 		$accessoryTypes = [];
 		if ($forceLowercase || ($keepLowercase && $argType->isLowercaseString()->yes())) {
 			$accessoryTypes[] = new AccessoryLowercaseStringType();
+		}
+		if ($forceUppercase || ($keepUppercase && $argType->isUppercaseString()->yes())) {
+			$accessoryTypes[] = new AccessoryUppercaseStringType();
 		}
 
 		if ($argType->isNumericString()->yes()) {

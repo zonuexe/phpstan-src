@@ -318,12 +318,12 @@ class MoreNonEmptyStringFunctions
 		assertType('string', escapeshellcmd($s));
 		assertType('non-empty-string', escapeshellcmd($nonEmpty));
 
-		assertType('string', strtoupper($s));
-		assertType('non-empty-string', strtoupper($nonEmpty));
+		assertType('uppercase-string', strtoupper($s));
+		assertType('non-empty-string&uppercase-string', strtoupper($nonEmpty));
 		assertType('lowercase-string', strtolower($s));
 		assertType('lowercase-string&non-empty-string', strtolower($nonEmpty));
-		assertType('string', mb_strtoupper($s));
-		assertType('non-empty-string', mb_strtoupper($nonEmpty));
+		assertType('uppercase-string', mb_strtoupper($s));
+		assertType('non-empty-string&uppercase-string', mb_strtoupper($nonEmpty));
 		assertType('lowercase-string', mb_strtolower($s));
 		assertType('lowercase-string&non-empty-string', mb_strtolower($nonEmpty));
 		assertType('string', lcfirst($s));

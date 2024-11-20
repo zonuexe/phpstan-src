@@ -274,6 +274,8 @@ interface Type
 
 	public function isLowercaseString(): TrinaryLogic;
 
+	public function isUppercaseString(): TrinaryLogic;
+
 	public function isClassStringType(): TrinaryLogic;
 
 	public function isVoid(): TrinaryLogic;

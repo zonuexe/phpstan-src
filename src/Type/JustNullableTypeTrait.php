@@ -157,6 +157,11 @@ trait JustNullableTypeTrait
 		return TrinaryLogic::createNo();
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return TrinaryLogic::createNo();
+	}
+
 	public function isClassStringType(): TrinaryLogic
 	{
 		return TrinaryLogic::createNo();

@@ -385,6 +385,11 @@ class HasOffsetValueType implements CompoundType, AccessoryType
 		return TrinaryLogic::createMaybe();
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return TrinaryLogic::createMaybe();
+	}
+
 	public function isClassStringType(): TrinaryLogic
 	{
 		return TrinaryLogic::createMaybe();

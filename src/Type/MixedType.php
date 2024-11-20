@@ -25,6 +25,7 @@ use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Accessory\OversizedArrayType;
 use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\Constant\ConstantBooleanType;
@@ -956,6 +957,22 @@ class MixedType implements CompoundType, SubtractableType
 			);
 
 			if ($this->subtractedType->isSuperTypeOf($lowercaseString)->yes()) {
+				return TrinaryLogic::createNo();
+			}
+		}
+
+		return TrinaryLogic::createMaybe();
+	}
+
+	public function isUppercaseString(): TrinaryLogic
+	{
+		if ($this->subtractedType !== null) {
+			$uppercaseString = TypeCombinator::intersect(
+				new StringType(),
+				new AccessoryUppercaseStringType(),
+			);
+
+			if ($this->subtractedType->isSuperTypeOf($uppercaseString)->yes()) {
 				return TrinaryLogic::createNo();
 			}
 		}

@@ -75,19 +75,26 @@ final class StrictComparisonOfDifferentTypesRule implements Rule
 		};
 
 		$verbosity = VerbosityLevel::value();
+
 		if (
 			(
 				$leftType->isConstantScalarValue()->yes()
 				&& !$leftType->isString()->no()
 				&& !$rightType->isConstantScalarValue()->yes()
 				&& !$rightType->isString()->no()
-				&& TrinaryLogic::extremeIdentity($leftType->isLowercaseString(), $rightType->isLowercaseString())->maybe()
+				&& (
+					TrinaryLogic::extremeIdentity($leftType->isLowercaseString(), $rightType->isLowercaseString())->maybe()
+					|| TrinaryLogic::extremeIdentity($leftType->isUppercaseString(), $rightType->isUppercaseString())->maybe()
+				)
 			) || (
 				$rightType->isConstantScalarValue()->yes()
 				&& !$rightType->isString()->no()
 				&& !$leftType->isConstantScalarValue()->yes()
 				&& !$leftType->isString()->no()
-				&& TrinaryLogic::extremeIdentity($leftType->isLowercaseString(), $rightType->isLowercaseString())->maybe()
+				&& (
+					TrinaryLogic::extremeIdentity($leftType->isLowercaseString(), $rightType->isLowercaseString())->maybe()
+					|| TrinaryLogic::extremeIdentity($leftType->isUppercaseString(), $rightType->isUppercaseString())->maybe()
+				)
 			)
 		) {
 			$verbosity = VerbosityLevel::precise();

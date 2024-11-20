@@ -3383,6 +3383,29 @@ class CallMethodsRuleTest extends RuleTestCase
 		]);
 	}
 
+	public function testUppercaseString(): void
+	{
+		$this->checkThisOnly = false;
+		$this->checkNullables = true;
+		$this->checkUnionTypes = true;
+		$this->checkExplicitMixed = true;
+
+		$this->analyse([__DIR__ . '/data/uppercase-string.php'], [
+			[
+				'Parameter #1 $s of method UppercaseString\Bar::acceptUppercaseString() expects uppercase-string, \'NotUpperCase\' given.',
+				26,
+			],
+			[
+				'Parameter #1 $s of method UppercaseString\Bar::acceptUppercaseString() expects uppercase-string, string given.',
+				28,
+			],
+			[
+				'Parameter #1 $s of method UppercaseString\Bar::acceptUppercaseString() expects uppercase-string, numeric-string given.',
+				30,
+			],
+		]);
+	}
+
 	public function testBug10159(): void
 	{
 		$this->checkThisOnly = false;

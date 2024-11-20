@@ -12,7 +12,6 @@ use PHPStan\Type\BooleanType;
 use PHPStan\Type\CompoundType;
 use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\Constant\ConstantIntegerType;
-use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\ErrorType;
 use PHPStan\Type\FloatType;
 use PHPStan\Type\GeneralizePrecision;
@@ -26,14 +25,13 @@ use PHPStan\Type\Traits\NonArrayTypeTrait;
 use PHPStan\Type\Traits\NonGenericTypeTrait;
 use PHPStan\Type\Traits\NonIterableTypeTrait;
 use PHPStan\Type\Traits\NonObjectTypeTrait;
-use PHPStan\Type\Traits\UndecidedBooleanTypeTrait;
+use PHPStan\Type\Traits\NonRemoveableTypeTrait;
 use PHPStan\Type\Traits\UndecidedComparisonCompoundTypeTrait;
 use PHPStan\Type\Type;
-use PHPStan\Type\TypeCombinator;
 use PHPStan\Type\UnionType;
 use PHPStan\Type\VerbosityLevel;
 
-class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
+class AccessoryUppercaseStringType implements CompoundType, AccessoryType
 {
 
 	use MaybeCallableTypeTrait;
@@ -42,7 +40,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 	use NonIterableTypeTrait;
 	use UndecidedComparisonCompoundTypeTrait;
 	use NonGenericTypeTrait;
-	use UndecidedBooleanTypeTrait;
+	use NonRemoveableTypeTrait;
 
 	/** @api */
 	public function __construct()
@@ -80,7 +78,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 			return $type->isAcceptedWithReasonBy($this, $strictTypes);
 		}
 
-		return new AcceptsResult($type->isNonEmptyString(), []);
+		return new AcceptsResult($type->isUppercaseString(), []);
 	}
 
 	public function isSuperTypeOf(Type $type): TrinaryLogic
@@ -98,11 +96,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 			return IsSuperTypeOfResult::createYes();
 		}
 
-		if ($type->isNonFalsyString()->yes()) {
-			return IsSuperTypeOfResult::createYes();
-		}
-
-		return new IsSuperTypeOfResult($type->isNonEmptyString(), []);
+		return new IsSuperTypeOfResult($type->isUppercaseString(), []);
 	}
 
 	public function isSubTypeOf(Type $otherType): TrinaryLogic
@@ -116,7 +110,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 			return $otherType->isSuperTypeOfWithReason($this);
 		}
 
-		return (new IsSuperTypeOfResult($otherType->isNonEmptyString(), []))
+		return (new IsSuperTypeOfResult($otherType->isUppercaseString(), []))
 			->and($otherType instanceof self ? IsSuperTypeOfResult::createYes() : IsSuperTypeOfResult::createMaybe());
 	}
 
@@ -137,7 +131,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 
 	public function describe(VerbosityLevel $level): string
 	{
-		return 'non-empty-string';
+		return 'uppercase-string';
 	}
 
 	public function isOffsetAccessible(): TrinaryLogic
@@ -161,11 +155,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 			return new ErrorType();
 		}
 
-		if ((new ConstantIntegerType(0))->isSuperTypeOf($offsetType)->yes()) {
-			return new IntersectionType([new StringType(), new AccessoryNonEmptyStringType()]);
-		}
-
-		return new StringType();
+		return new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]);
 	}
 
 	public function setOffsetValueType(?Type $offsetType, Type $valueType, bool $unionValues = true): Type
@@ -176,7 +166,11 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 			return $stringOffset;
 		}
 
-		return $this;
+		if ($valueType->isUppercaseString()->yes()) {
+			return $this;
+		}
+
+		return new StringType();
 	}
 
 	public function setExistingOffsetValueType(Type $offsetType, Type $valueType): Type
@@ -212,6 +206,11 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 	public function toString(): Type
 	{
 		return $this;
+	}
+
+	public function toBoolean(): BooleanType
+	{
+		return new BooleanType();
 	}
 
 	public function toArray(): Type
@@ -292,7 +291,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 
 	public function isNonEmptyString(): TrinaryLogic
 	{
-		return TrinaryLogic::createYes();
+		return TrinaryLogic::createMaybe();
 	}
 
 	public function isNonFalsyString(): TrinaryLogic
@@ -312,7 +311,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 
 	public function isUppercaseString(): TrinaryLogic
 	{
-		return TrinaryLogic::createMaybe();
+		return TrinaryLogic::createYes();
 	}
 
 	public function isClassStringType(): TrinaryLogic
@@ -328,6 +327,11 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 	public function getObjectTypeOrClassStringObjectType(): Type
 	{
 		return new ObjectWithoutClassType();
+	}
+
+	public function hasMethod(string $methodName): TrinaryLogic
+	{
+		return TrinaryLogic::createMaybe();
 	}
 
 	public function isVoid(): TrinaryLogic
@@ -365,15 +369,6 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 		return new self();
 	}
 
-	public function tryRemove(Type $typeToRemove): ?Type
-	{
-		if ($typeToRemove instanceof ConstantStringType && $typeToRemove->getValue() === '0') {
-			return TypeCombinator::intersect($this, new AccessoryNonFalsyStringType());
-		}
-
-		return null;
-	}
-
 	public function exponentiate(Type $exponent): Type
 	{
 		return new BenevolentUnionType([
@@ -389,7 +384,7 @@ class AccessoryNonEmptyStringType implements CompoundType, AccessoryType
 
 	public function toPhpDocNode(): TypeNode
 	{
-		return new IdentifierTypeNode('non-empty-string');
+		return new IdentifierTypeNode('uppercase-string');
 	}
 
 }
