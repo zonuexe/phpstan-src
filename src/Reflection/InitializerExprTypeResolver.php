@@ -31,6 +31,7 @@ use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Accessory\NonEmptyArrayType;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\BenevolentUnionType;
@@ -480,8 +481,13 @@ final class InitializerExprTypeResolver
 		if ($leftStringType->isLiteralString()->and($rightStringType->isLiteralString())->yes()) {
 			$accessoryTypes[] = new AccessoryLiteralStringType();
 		}
+
 		if ($leftStringType->isLowercaseString()->and($rightStringType->isLowercaseString())->yes()) {
 			$accessoryTypes[] = new AccessoryLowercaseStringType();
+		}
+
+		if ($leftStringType->isUppercaseString()->and($rightStringType->isUppercaseString())->yes()) {
+			$accessoryTypes[] = new AccessoryUppercaseStringType();
 		}
 
 		$leftNumericStringNonEmpty = TypeCombinator::remove($leftStringType, new ConstantStringType(''));

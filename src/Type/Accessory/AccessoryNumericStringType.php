@@ -292,6 +292,11 @@ class AccessoryNumericStringType implements CompoundType, AccessoryType
 		return TrinaryLogic::createMaybe();
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return TrinaryLogic::createMaybe();
+	}
+
 	public function isClassString(): TrinaryLogic
 	{
 		return TrinaryLogic::createNo();

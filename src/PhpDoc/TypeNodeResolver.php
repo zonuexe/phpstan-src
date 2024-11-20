@@ -50,6 +50,7 @@ use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Accessory\NonEmptyArrayType;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\BenevolentUnionType;
@@ -224,6 +225,9 @@ final class TypeNodeResolver
 			case 'lowercase-string':
 				return new IntersectionType([new StringType(), new AccessoryLowercaseStringType()]);
 
+			case 'uppercase-string':
+				return new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]);
+
 			case 'literal-string':
 				return new IntersectionType([new StringType(), new AccessoryLiteralStringType()]);
 
@@ -302,6 +306,13 @@ final class TypeNodeResolver
 					new StringType(),
 					new AccessoryNonEmptyStringType(),
 					new AccessoryLowercaseStringType(),
+				]);
+
+			case 'non-empty-uppercase-string':
+				return new IntersectionType([
+					new StringType(),
+					new AccessoryNonEmptyStringType(),
+					new AccessoryUppercaseStringType(),
 				]);
 
 			case 'truthy-string':

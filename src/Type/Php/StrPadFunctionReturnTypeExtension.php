@@ -9,6 +9,7 @@ use PHPStan\Type\Accessory\AccessoryLiteralStringType;
 use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\DynamicFunctionReturnTypeExtension;
 use PHPStan\Type\IntegerRangeType;
 use PHPStan\Type\IntersectionType;
@@ -56,6 +57,9 @@ final class StrPadFunctionReturnTypeExtension implements DynamicFunctionReturnTy
 		}
 		if ($inputType->isLowercaseString()->yes() && ($padStringType === null || $padStringType->isLowercaseString()->yes())) {
 			$accessoryTypes[] = new AccessoryLowercaseStringType();
+		}
+		if ($inputType->isUppercaseString()->yes() && ($padStringType === null || $padStringType->isUppercaseString()->yes())) {
+			$accessoryTypes[] = new AccessoryUppercaseStringType();
 		}
 
 		if (count($accessoryTypes) > 0) {

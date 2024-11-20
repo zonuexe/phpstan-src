@@ -8,6 +8,7 @@ use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
 use PHPStan\Type\Accessory\AccessoryNumericStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Accessory\NonEmptyArrayType;
 use PHPStan\Type\Generic\GenericObjectType;
 use PHPStan\Type\Generic\TemplateType;
@@ -108,7 +109,10 @@ final class VerbosityLevel
 				$moreVerbose = true;
 				return $type;
 			}
-			if ($type instanceof AccessoryLowercaseStringType) {
+			if (
+				$type instanceof AccessoryLowercaseStringType
+				|| $type instanceof AccessoryUppercaseStringType
+			) {
 				$moreVerbose = true;
 				$veryVerbose = true;
 				return $type;

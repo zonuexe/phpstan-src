@@ -26,20 +26,18 @@ use PHPStan\Type\Traits\NonGenericTypeTrait;
 use PHPStan\Type\Traits\NonIterableTypeTrait;
 use PHPStan\Type\Traits\NonObjectTypeTrait;
 use PHPStan\Type\Traits\NonRemoveableTypeTrait;
-use PHPStan\Type\Traits\TruthyBooleanTypeTrait;
 use PHPStan\Type\Traits\UndecidedComparisonCompoundTypeTrait;
 use PHPStan\Type\Type;
 use PHPStan\Type\UnionType;
 use PHPStan\Type\VerbosityLevel;
 
-class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
+class AccessoryUppercaseStringType implements CompoundType, AccessoryType
 {
 
 	use MaybeCallableTypeTrait;
 	use NonArrayTypeTrait;
 	use NonObjectTypeTrait;
 	use NonIterableTypeTrait;
-	use TruthyBooleanTypeTrait;
 	use UndecidedComparisonCompoundTypeTrait;
 	use NonGenericTypeTrait;
 	use NonRemoveableTypeTrait;
@@ -75,7 +73,7 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 			return $type->isAcceptedBy($this, $strictTypes);
 		}
 
-		return new AcceptsResult($type->isNonFalsyString(), []);
+		return new AcceptsResult($type->isUppercaseString(), []);
 	}
 
 	public function isSuperTypeOf(Type $type): IsSuperTypeOfResult
@@ -88,7 +86,7 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 			return IsSuperTypeOfResult::createYes();
 		}
 
-		return new IsSuperTypeOfResult($type->isNonFalsyString(), []);
+		return new IsSuperTypeOfResult($type->isUppercaseString(), []);
 	}
 
 	public function isSubTypeOf(Type $otherType): IsSuperTypeOfResult
@@ -97,11 +95,7 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 			return $otherType->isSuperTypeOf($this);
 		}
 
-		if ($otherType instanceof AccessoryNonEmptyStringType) {
-			return IsSuperTypeOfResult::createYes();
-		}
-
-		return (new IsSuperTypeOfResult($otherType->isNonFalsyString(), []))
+		return (new IsSuperTypeOfResult($otherType->isUppercaseString(), []))
 			->and($otherType instanceof self ? IsSuperTypeOfResult::createYes() : IsSuperTypeOfResult::createMaybe());
 	}
 
@@ -117,7 +111,7 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 
 	public function describe(VerbosityLevel $level): string
 	{
-		return 'non-falsy-string';
+		return 'uppercase-string';
 	}
 
 	public function isOffsetAccessible(): TrinaryLogic
@@ -141,7 +135,7 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 			return new ErrorType();
 		}
 
-		return new StringType();
+		return new IntersectionType([new StringType(), new AccessoryUppercaseStringType()]);
 	}
 
 	public function setOffsetValueType(?Type $offsetType, Type $valueType, bool $unionValues = true): Type
@@ -152,7 +146,7 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 			return $stringOffset;
 		}
 
-		if ($valueType->isNonFalsyString()->yes()) {
+		if ($valueType->isUppercaseString()->yes()) {
 			return $this;
 		}
 
@@ -192,6 +186,11 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 	public function toString(): Type
 	{
 		return $this;
+	}
+
+	public function toBoolean(): BooleanType
+	{
+		return new BooleanType();
 	}
 
 	public function toArray(): Type
@@ -272,12 +271,12 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 
 	public function isNonEmptyString(): TrinaryLogic
 	{
-		return TrinaryLogic::createYes();
+		return TrinaryLogic::createMaybe();
 	}
 
 	public function isNonFalsyString(): TrinaryLogic
 	{
-		return TrinaryLogic::createYes();
+		return TrinaryLogic::createMaybe();
 	}
 
 	public function isLiteralString(): TrinaryLogic
@@ -290,12 +289,12 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 		return TrinaryLogic::createMaybe();
 	}
 
-	public function isClassString(): TrinaryLogic
+	public function isUppercaseString(): TrinaryLogic
 	{
-		return TrinaryLogic::createMaybe();
+		return TrinaryLogic::createYes();
 	}
 
-	public function isUppercaseString(): TrinaryLogic
+	public function isClassString(): TrinaryLogic
 	{
 		return TrinaryLogic::createMaybe();
 	}
@@ -308,6 +307,11 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 	public function getObjectTypeOrClassStringObjectType(): Type
 	{
 		return new ObjectWithoutClassType();
+	}
+
+	public function hasMethod(string $methodName): TrinaryLogic
+	{
+		return TrinaryLogic::createMaybe();
 	}
 
 	public function isVoid(): TrinaryLogic
@@ -340,6 +344,11 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 		return new StringType();
 	}
 
+	public static function __set_state(array $properties): Type
+	{
+		return new self();
+	}
+
 	public function exponentiate(Type $exponent): Type
 	{
 		return new BenevolentUnionType([
@@ -355,7 +364,7 @@ class AccessoryNonFalsyStringType implements CompoundType, AccessoryType
 
 	public function toPhpDocNode(): TypeNode
 	{
-		return new IdentifierTypeNode('non-falsy-string');
+		return new IdentifierTypeNode('uppercase-string');
 	}
 
 }

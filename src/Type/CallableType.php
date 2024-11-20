@@ -588,6 +588,11 @@ class CallableType implements CompoundType, CallableParametersAcceptor
 		return TrinaryLogic::createMaybe();
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return TrinaryLogic::createMaybe();
+	}
+
 	public function getClassStringObjectType(): Type
 	{
 		return new ObjectWithoutClassType();

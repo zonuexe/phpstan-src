@@ -472,7 +472,7 @@ class FooCoalesce
 
 		assertType('int<0, max>', rand() ?? false);
 
-		assertType('0|lowercase-string', preg_replace('', '', '') ?? 0);
+		assertType('0|(lowercase-string&uppercase-string)', preg_replace('', '', '') ?? 0);
 
 		$foo = new FooCoalesce();
 

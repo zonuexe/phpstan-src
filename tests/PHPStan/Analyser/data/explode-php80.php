@@ -9,6 +9,7 @@ class ExplodingStrings
 	public function doFoo(string $s): void
 	{
 		assertType('non-empty-list<lowercase-string>', explode($s, 'foo'));
-		assertType('non-empty-list<string>', explode($s, 'FOO'));
+		assertType('non-empty-list<uppercase-string>', explode($s, 'FOO'));
+		assertType('non-empty-list<string>', explode($s, 'Foo'));
 	}
 }

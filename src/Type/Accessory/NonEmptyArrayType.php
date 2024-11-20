@@ -375,6 +375,11 @@ class NonEmptyArrayType implements CompoundType, AccessoryType
 		return TrinaryLogic::createNo();
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return TrinaryLogic::createNo();
+	}
+
 	public function getClassStringObjectType(): Type
 	{
 		return new ErrorType();

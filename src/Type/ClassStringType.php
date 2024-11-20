@@ -69,6 +69,11 @@ class ClassStringType extends StringType
 		return TrinaryLogic::createMaybe();
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return TrinaryLogic::createMaybe();
+	}
+
 	public function isClassString(): TrinaryLogic
 	{
 		return TrinaryLogic::createYes();

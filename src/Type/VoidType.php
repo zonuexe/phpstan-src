@@ -204,6 +204,11 @@ class VoidType implements Type
 		return TrinaryLogic::createNo();
 	}
 
+	public function isUppercaseString(): TrinaryLogic
+	{
+		return TrinaryLogic::createNo();
+	}
+
 	public function isClassString(): TrinaryLogic
 	{
 		return TrinaryLogic::createNo();

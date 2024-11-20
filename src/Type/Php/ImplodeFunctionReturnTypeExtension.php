@@ -9,6 +9,7 @@ use PHPStan\Type\Accessory\AccessoryLiteralStringType;
 use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
 use PHPStan\Type\Accessory\AccessoryNonEmptyStringType;
 use PHPStan\Type\Accessory\AccessoryNonFalsyStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\ConstantScalarType;
@@ -93,6 +94,9 @@ final class ImplodeFunctionReturnTypeExtension implements DynamicFunctionReturnT
 		}
 		if ($arrayType->getIterableValueType()->isLowercaseString()->yes() && $separatorType->isLowercaseString()->yes()) {
 			$accessoryTypes[] = new AccessoryLowercaseStringType();
+		}
+		if ($arrayType->getIterableValueType()->isUppercaseString()->yes() && $separatorType->isUppercaseString()->yes()) {
+			$accessoryTypes[] = new AccessoryUppercaseStringType();
 		}
 
 		if (count($accessoryTypes) > 0) {

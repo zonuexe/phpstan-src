@@ -8,6 +8,7 @@ use PHPStan\Php\PhpVersion;
 use PHPStan\Reflection\FunctionReflection;
 use PHPStan\Type\Accessory\AccessoryArrayListType;
 use PHPStan\Type\Accessory\AccessoryLowercaseStringType;
+use PHPStan\Type\Accessory\AccessoryUppercaseStringType;
 use PHPStan\Type\Accessory\NonEmptyArrayType;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\Constant\ConstantBooleanType;
@@ -57,8 +58,16 @@ final class ExplodeFunctionDynamicReturnTypeExtension implements DynamicFunction
 		}
 
 		$stringType = $scope->getType($args[1]->value);
+		$accessory = [];
 		if ($stringType->isLowercaseString()->yes()) {
-			$returnValueType = new IntersectionType([new StringType(), new AccessoryLowercaseStringType()]);
+			$accessory[] = new AccessoryLowercaseStringType();
+		}
+		if ($stringType->isUppercaseString()->yes()) {
+			$accessory[] = new AccessoryUppercaseStringType();
+		}
+		if (count($accessory) > 0) {
+			$accessory[] = new StringType();
+			$returnValueType = new IntersectionType($accessory);
 		} else {
 			$returnValueType = new StringType();
 		}
