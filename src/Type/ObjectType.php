@@ -5,11 +5,6 @@ namespace PHPStan\Type;
 use ArrayAccess;
 use Closure;
 use Countable;
-use DateTime;
-use DateTimeImmutable;
-use DateTimeInterface;
-use Error;
-use Exception;
 use Iterator;
 use IteratorAggregate;
 use PHPStan\Analyser\OutOfClassScope;
@@ -46,7 +41,6 @@ use PHPStan\Type\Traits\NonArrayTypeTrait;
 use PHPStan\Type\Traits\NonGeneralizableTypeTrait;
 use PHPStan\Type\Traits\NonGenericTypeTrait;
 use PHPStan\Type\Traits\UndecidedComparisonTypeTrait;
-use Throwable;
 use Traversable;
 use function array_key_exists;
 use function array_map;
@@ -1560,23 +1554,21 @@ class ObjectType implements TypeWithClassName, SubtractableType
 
 	public function tryRemove(Type $typeToRemove): ?Type
 	{
-		if ($this->getClassName() === DateTimeInterface::class) {
-			if ($typeToRemove instanceof ObjectType && $typeToRemove->getClassName() === DateTimeImmutable::class) {
-				return new ObjectType(DateTime::class);
-			}
+		if ($typeToRemove instanceof ObjectType) {
+			foreach (UnionType::EQUAL_UNION_CLASSES as $baseClass => $classes) {
+				if ($this->getClassName() !== $baseClass) {
+					continue;
+				}
 
-			if ($typeToRemove instanceof ObjectType && $typeToRemove->getClassName() === DateTime::class) {
-				return new ObjectType(DateTimeImmutable::class);
-			}
-		}
+				foreach ($classes as $index => $class) {
+					if ($typeToRemove->getClassName() === $class) {
+						unset($classes[$index]);
 
-		if ($this->getClassName() === Throwable::class) {
-			if ($typeToRemove instanceof ObjectType && $typeToRemove->getClassName() === Error::class) {
-				return new ObjectType(Exception::class); // phpcs:ignore SlevomatCodingStandard.Exceptions.ReferenceThrowableOnly.ReferencedGeneralException
-			}
-
-			if ($typeToRemove instanceof ObjectType && $typeToRemove->getClassName() === Exception::class) { // phpcs:ignore SlevomatCodingStandard.Exceptions.ReferenceThrowableOnly.ReferencedGeneralException
-				return new ObjectType(Error::class);
+						return TypeCombinator::union(
+							...array_map(static fn (string $objectClass): Type => new ObjectType($objectClass), $classes),
+						);
+					}
+				}
 			}
 		}
 
