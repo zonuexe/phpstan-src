@@ -47,6 +47,7 @@ use PHPStan\Parser\ArrayMapArgVisitor;
 use PHPStan\Parser\NewAssignedToPropertyVisitor;
 use PHPStan\Parser\Parser;
 use PHPStan\Php\PhpVersion;
+use PHPStan\Php\PhpVersions;
 use PHPStan\PhpDoc\Tag\TemplateTag;
 use PHPStan\Reflection\Assertions;
 use PHPStan\Reflection\Callables\CallableParametersAcceptor;
@@ -5719,6 +5720,16 @@ final class MutatingScope implements Scope
 		}
 
 		return $iteratee->getIterableValueType();
+	}
+
+	public function getPhpVersion(): PhpVersions
+	{
+		$versionExpr = new ConstFetch(new Name('PHP_VERSION_ID'));
+		if (!$this->hasExpressionType($versionExpr)->yes()) {
+			return new PhpVersions(new ConstantIntegerType($this->phpVersion->getVersionId()));
+		}
+
+		return new PhpVersions($this->getType($versionExpr));
 	}
 
 }
