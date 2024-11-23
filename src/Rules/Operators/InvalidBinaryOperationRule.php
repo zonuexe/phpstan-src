@@ -6,12 +6,14 @@ use PhpParser\Node;
 use PHPStan\Analyser\MutatingScope;
 use PHPStan\Analyser\Scope;
 use PHPStan\Node\Printer\ExprPrinter;
+use PHPStan\Php\PhpVersion;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Rules\RuleLevelHelper;
 use PHPStan\ShouldNotHappenException;
 use PHPStan\TrinaryLogic;
 use PHPStan\Type\ErrorType;
+use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
 use PHPStan\Type\VerbosityLevel;
 use function sprintf;
@@ -26,6 +28,7 @@ final class InvalidBinaryOperationRule implements Rule
 
 	public function __construct(
 		private ExprPrinter $exprPrinter,
+		private PhpVersion $phpVersion,
 		private RuleLevelHelper $ruleLevelHelper,
 	)
 	{
@@ -70,9 +73,13 @@ final class InvalidBinaryOperationRule implements Rule
 		if ($node instanceof Node\Expr\AssignOp\Concat || $node instanceof Node\Expr\BinaryOp\Concat) {
 			$callback = static fn (Type $type): bool => !$type->toString() instanceof ErrorType;
 		} elseif ($node instanceof Node\Expr\AssignOp\Plus || $node instanceof Node\Expr\BinaryOp\Plus) {
-			$callback = static fn (Type $type): bool => !$type->toNumber() instanceof ErrorType || $type->isArray()->yes();
+			$callback = $this->phpVersion->supportsBcMathNumberOperatorOverloading()
+				? static fn (Type $type): bool => !$type->toNumber() instanceof ErrorType || $type->isArray()->yes() || $type->isSuperTypeOf(new ObjectType('BcMath\Number'))->yes()
+				: static fn (Type $type): bool => !$type->toNumber() instanceof ErrorType || $type->isArray()->yes();
 		} else {
-			$callback = static fn (Type $type): bool => !$type->toNumber() instanceof ErrorType;
+			$callback = $this->phpVersion->supportsBcMathNumberOperatorOverloading()
+				? static fn (Type $type): bool => !$type->toNumber() instanceof ErrorType || $type->isSuperTypeOf(new ObjectType('BcMath\Number'))->yes()
+				: static fn (Type $type): bool => !$type->toNumber() instanceof ErrorType;
 		}
 
 		$leftType = $this->ruleLevelHelper->findTypeToCheck(

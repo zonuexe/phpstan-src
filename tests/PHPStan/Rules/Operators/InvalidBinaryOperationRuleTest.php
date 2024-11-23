@@ -4,6 +4,7 @@ namespace PHPStan\Rules\Operators;
 
 use PHPStan\Node\Printer\ExprPrinter;
 use PHPStan\Node\Printer\Printer;
+use PHPStan\Php\PhpVersion;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleLevelHelper;
 use PHPStan\Testing\RuleTestCase;
@@ -23,6 +24,7 @@ class InvalidBinaryOperationRuleTest extends RuleTestCase
 	{
 		return new InvalidBinaryOperationRule(
 			new ExprPrinter(new Printer()),
+			new PhpVersion(PHP_VERSION_ID),
 			new RuleLevelHelper($this->createReflectionProvider(), true, false, true, $this->checkExplicitMixed, $this->checkImplicitMixed, false),
 		);
 	}
