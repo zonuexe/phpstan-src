@@ -32,6 +32,8 @@ final class ReplaceFunctionsDynamicReturnTypeExtension implements DynamicFunctio
 {
 
 	private const FUNCTIONS_SUBJECT_POSITION = [
+		'mb_ereg_replace' => 2,
+		'mb_ereg_replace_callback' => 2,
 		'preg_replace' => 2,
 		'preg_replace_callback' => 2,
 		'preg_replace_callback_array' => 1,
@@ -42,6 +44,7 @@ final class ReplaceFunctionsDynamicReturnTypeExtension implements DynamicFunctio
 	];
 
 	private const FUNCTIONS_REPLACE_POSITION = [
+		'mb_ereg_replace' => 1,
 		'preg_replace' => 1,
 		'str_replace' => 1,
 		'str_ireplace' => 1,

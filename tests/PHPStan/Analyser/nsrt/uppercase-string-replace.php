@@ -38,5 +38,13 @@ class ReplaceStrings
 		assertType('string', substr_replace($s, $us, 1));
 		assertType('string', substr_replace($us, $s, 1));
 		assertType('string', substr_replace($s, $s, 1));
+
+		assertType('uppercase-string', strtr($us, $s, $us));
+		assertType('string', strtr($us, $s, $s));
+		assertType('uppercase-string', strtr($us, [$s => $us]));
+		assertType('string', strtr($us, [$s => $s]));
+
+		assertType('uppercase-string', mb_ereg_replace($s, $us, $us));
+		assertType('string', mb_ereg_replace($s, $s, $us));
 	}
 }

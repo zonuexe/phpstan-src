@@ -35,6 +35,11 @@ function ($mixed) {
 	$expectedArrayOrString3 = str_ireplace('aaa', 'bbb', $arrayOrString);
 	$expectedBenevolentArrayOrString3 = str_ireplace('aaa', 'bbb', $mixed);
 
+	$expectedString4 = mb_ereg_replace('aaa', 'bbb', $string);
+	$expectedString5 = mb_ereg_replace_callback('aaa', function () {}, $string);
+	$expectedArrayOrString4 = mb_ereg_replace('aaa', 'bbb', $arrayOrString);
+	$expectedArrayOrString5 = mb_ereg_replace_callback('aaa', function () {}, $arrayOrString);
+
 	/** @var Foo[] $arr */
 	$arr = doFoo();
 
@@ -51,6 +56,10 @@ function ($mixed) {
 		assertType('array{}|(lowercase-string&non-falsy-string)|null', $anotherExpectedArrayOrString);
 		assertType('array{a?: string, b?: string}', preg_replace_callback_array($callbacks, $array));
 		assertType('string|null', preg_replace_callback_array($callbacks, $string));
+		assertType('lowercase-string&non-falsy-string', $expectedString4);
+		assertType('string', $expectedString5);
+		assertType('array{}|(lowercase-string&non-falsy-string)', $expectedArrayOrString4);
+		assertType('array{}|string', $expectedArrayOrString5);
 		assertType('string', str_replace('.', ':', $intOrStringKey));
 		assertType('string', str_ireplace('.', ':', $intOrStringKey));
 	}

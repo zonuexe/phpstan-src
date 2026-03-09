@@ -38,5 +38,14 @@ class ReplaceStrings
 		assertType('string', substr_replace($s, $ls, 1));
 		assertType('string', substr_replace($ls, $s, 1));
 		assertType('string', substr_replace($s, $s, 1));
+
+		assertType('lowercase-string', strtr($ls, $s, $ls));
+		assertType('string', strtr($ls, $s, $s));
+		assertType('lowercase-string', strtr($ls, [$s => $ls]));
+		assertType('string', strtr($ls, [$s => $s]));
+
+		assertType('lowercase-string', mb_ereg_replace($s, $ls, $ls));
+		assertType('string', mb_ereg_replace($s, $s, $ls));
 	}
+
 }
