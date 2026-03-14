@@ -46,5 +46,14 @@ class ReplaceStrings
 
 		assertType('uppercase-string', mb_ereg_replace($s, $us, $us));
 		assertType('string', mb_ereg_replace($s, $s, $us));
+
+		$f = function (array $matches): string {
+			return strtoupper($matches[0]);
+		};
+		assertType('uppercase-string|null', preg_replace_callback($s, $f, $us));
+		assertType('uppercase-string', mb_ereg_replace_callback($s, $f, $us));
+		assertType('uppercase-string|null', preg_replace_callback($s, 'strtoupper', $us));
+		assertType('uppercase-string', mb_ereg_replace_callback($s, 'strtoupper', $us));
+		assertType('uppercase-string|null', preg_replace_callback_array([$s => $f], $us));
 	}
 }

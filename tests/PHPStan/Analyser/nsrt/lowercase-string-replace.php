@@ -46,6 +46,15 @@ class ReplaceStrings
 
 		assertType('lowercase-string', mb_ereg_replace($s, $ls, $ls));
 		assertType('string', mb_ereg_replace($s, $s, $ls));
+
+		$f = function (array $matches): string {
+			return strtolower($matches[0]);
+		};
+		assertType('lowercase-string|null', preg_replace_callback($s,$f, $ls));
+		assertType('lowercase-string', mb_ereg_replace_callback($s, $f, $ls));
+		assertType('lowercase-string|null', preg_replace_callback($s, 'strtolower', $ls));
+		assertType('lowercase-string', mb_ereg_replace_callback($s, 'strtolower', $ls));
+		assertType('lowercase-string|null', preg_replace_callback_array([$s => $f], $ls));
 	}
 
 }

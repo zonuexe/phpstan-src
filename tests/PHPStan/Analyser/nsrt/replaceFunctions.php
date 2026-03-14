@@ -39,6 +39,18 @@ function ($mixed) {
 	$expectedString5 = mb_ereg_replace_callback('aaa', function () {}, $string);
 	$expectedArrayOrString4 = mb_ereg_replace('aaa', 'bbb', $arrayOrString);
 	$expectedArrayOrString5 = mb_ereg_replace_callback('aaa', function () {}, $arrayOrString);
+	$lowercaseCallback = static function (array $matches): string {
+		return strtolower($matches[0]);
+	};
+	$expectedString6 = preg_replace_callback('aaa', $lowercaseCallback, $string);
+	$expectedArray6 = preg_replace_callback('aaa', $lowercaseCallback, $array);
+	$expectedArrayOrString6 = preg_replace_callback('aaa', $lowercaseCallback, $arrayOrString);
+	$expectedString7 = mb_ereg_replace_callback('aaa', $lowercaseCallback, $string);
+	$expectedArrayOrString7 = mb_ereg_replace_callback('aaa', $lowercaseCallback, $arrayOrString);
+	$lowercaseCallbacks = ['/[ab]+/' => $lowercaseCallback];
+	$expectedString8 = preg_replace_callback_array($lowercaseCallbacks, $string);
+	$expectedArray8 = preg_replace_callback_array($lowercaseCallbacks, $array);
+	$expectedArrayOrString8 = preg_replace_callback_array($lowercaseCallbacks, $arrayOrString);
 
 	/** @var Foo[] $arr */
 	$arr = doFoo();
@@ -60,6 +72,14 @@ function ($mixed) {
 		assertType('string', $expectedString5);
 		assertType('array{}|(lowercase-string&non-falsy-string)', $expectedArrayOrString4);
 		assertType('array{}|string', $expectedArrayOrString5);
+		assertType('lowercase-string|null', $expectedString6);
+		assertType('array{a?: lowercase-string, b?: lowercase-string}', $expectedArray6);
+		assertType('array{}|lowercase-string|null', $expectedArrayOrString6);
+		assertType('lowercase-string', $expectedString7);
+		assertType('array{}|lowercase-string', $expectedArrayOrString7);
+		assertType('lowercase-string|null', $expectedString8);
+		assertType('array{a?: lowercase-string, b?: lowercase-string}', $expectedArray8);
+		assertType('array{}|lowercase-string|null', $expectedArrayOrString8);
 		assertType('string', str_replace('.', ':', $intOrStringKey));
 		assertType('string', str_ireplace('.', ':', $intOrStringKey));
 	}

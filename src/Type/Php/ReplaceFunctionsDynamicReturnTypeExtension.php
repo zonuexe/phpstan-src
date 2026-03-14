@@ -52,6 +52,15 @@ final class ReplaceFunctionsDynamicReturnTypeExtension implements DynamicFunctio
 		'strtr' => 2,
 	];
 
+	private const FUNCTIONS_CALLBACK_POSITION = [
+		'mb_ereg_replace_callback' => 1,
+		'preg_replace_callback' => 1,
+	];
+
+	private const FUNCTIONS_CALLBACK_ARRAY_POSITION = [
+		'preg_replace_callback_array' => 0,
+	];
+
 	public function isFunctionSupported(FunctionReflection $functionReflection): bool
 	{
 		return array_key_exists($functionReflection->getName(), self::FUNCTIONS_SUBJECT_POSITION);
@@ -112,6 +121,10 @@ final class ReplaceFunctionsDynamicReturnTypeExtension implements DynamicFunctio
 				);
 				$replaceArgumentType = $secondArgumentType->getIterableValueType();
 			}
+		} elseif (array_key_exists($functionReflection->getName(), self::FUNCTIONS_CALLBACK_POSITION)) {
+			$replaceArgumentType = $this->getCallbackReturnType($functionReflection, $functionCall, $scope);
+		} elseif (array_key_exists($functionReflection->getName(), self::FUNCTIONS_CALLBACK_ARRAY_POSITION)) {
+			$replaceArgumentType = $this->getCallbackArrayReturnType($functionReflection, $functionCall, $scope);
 		}
 
 		$result = [];
@@ -201,6 +214,74 @@ final class ReplaceFunctionsDynamicReturnTypeExtension implements DynamicFunctio
 		}
 
 		return new StringType();
+	}
+
+	private function getCallbackReturnType(
+		FunctionReflection $functionReflection,
+		FuncCall $functionCall,
+		Scope $scope,
+	): ?Type
+	{
+		if (!array_key_exists($functionReflection->getName(), self::FUNCTIONS_CALLBACK_POSITION)) {
+			throw new ShouldNotHappenException();
+		}
+
+		$callbackPosition = self::FUNCTIONS_CALLBACK_POSITION[$functionReflection->getName()];
+		$args = $functionCall->getArgs();
+		if (count($args) <= $callbackPosition) {
+			return null;
+		}
+
+		$callbackType = $scope->getType($args[$callbackPosition]->value);
+		return $this->getReturnTypeFromCallableType($callbackType, $scope);
+	}
+
+	private function getCallbackArrayReturnType(
+		FunctionReflection $functionReflection,
+		FuncCall $functionCall,
+		Scope $scope,
+	): ?Type
+	{
+		if (!array_key_exists($functionReflection->getName(), self::FUNCTIONS_CALLBACK_ARRAY_POSITION)) {
+			throw new ShouldNotHappenException();
+		}
+
+		$callbacksPosition = self::FUNCTIONS_CALLBACK_ARRAY_POSITION[$functionReflection->getName()];
+		$args = $functionCall->getArgs();
+		if (count($args) <= $callbacksPosition) {
+			return null;
+		}
+
+		$callbacksType = $scope->getType($args[$callbacksPosition]->value);
+		$returnTypes = [];
+		foreach ($callbacksType->getConstantArrays() as $constantCallbacksType) {
+			foreach ($constantCallbacksType->getValueTypes() as $callbackType) {
+				$callbackReturnType = $this->getReturnTypeFromCallableType($callbackType, $scope);
+				if ($callbackReturnType === null) {
+					continue;
+				}
+				$returnTypes[] = $callbackReturnType;
+			}
+		}
+		if (count($returnTypes) > 0) {
+			return TypeCombinator::union(...$returnTypes);
+		}
+
+		return $this->getReturnTypeFromCallableType($callbacksType->getIterableValueType(), $scope);
+	}
+
+	private function getReturnTypeFromCallableType(Type $callbackType, Scope $scope): ?Type
+	{
+		if ($callbackType->isCallable()->no()) {
+			return null;
+		}
+
+		$callbackVariants = $callbackType->getCallableParametersAcceptors($scope);
+		if (count($callbackVariants) === 0) {
+			return null;
+		}
+
+		return ParametersAcceptorSelector::combineAcceptors($callbackVariants)->getReturnType();
 	}
 
 	private function getSubjectType(
