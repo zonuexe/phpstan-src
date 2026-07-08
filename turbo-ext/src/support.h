@@ -2119,6 +2119,12 @@ zv::Val pt_mutating_scope_get_current_expression_result_storage(zend_object *sco
 zv::Val pt_mutating_scope_resolve_type_by_name(zend_object *scope, zend_object *name);
 zv::Val pt_mutating_scope_specify_types_of_new_world_handler_node(zend_object *scope, zend_object *node, zval *context);
 
+/* ClosureBindScopeResolver.cpp — $resolver->resolveScopeClass($scope,
+ * $class) ($class a Name): the native body for the shadowing class, the
+ * method by name otherwise (arguments borrowed); IS_NULL for null, UNDEF =
+ * pending exception */
+zv::Val pt_closure_bind_scope_resolver_resolve_scope_class(zval *resolver, zval *scope, zval *class_);
+
 /* ReflectionAccess.cpp — $collection->getAll(): the memoized list out of a
  * LazyExtensionsCollection's $extensions slot, the method on the first call
  * and for any other ExtensionsCollection; UNDEF = pending exception */

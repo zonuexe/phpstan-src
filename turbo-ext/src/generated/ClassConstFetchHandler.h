@@ -14,6 +14,7 @@ inline constexpr uint32_t initializerExprTypeResolver = 0;
 inline constexpr uint32_t expressionResultFactory = 1;
 inline constexpr uint32_t defaultNarrowingHelper = 2;
 inline constexpr uint32_t reflectionProvider = 3;
+inline constexpr uint32_t closureBindScopeResolver = 4;
 } // namespace slot
 
 inline void declareClass(reg::Class &cls)
@@ -29,6 +30,7 @@ inline void declareProperties(reg::Class &cls)
 	cls.property("expressionResultFactory", ZEND_ACC_PRIVATE, reg::PropertyKind::Typed, 0, "PHPStan\\Analyser\\ExpressionResultFactory");
 	cls.property("defaultNarrowingHelper", ZEND_ACC_PRIVATE, reg::PropertyKind::Typed, 0, "PHPStan\\Analyser\\ExprHandler\\Helper\\DefaultNarrowingHelper");
 	cls.property("reflectionProvider", ZEND_ACC_PRIVATE, reg::PropertyKind::Typed, 0, "PHPStan\\Reflection\\ReflectionProvider");
+	cls.property("closureBindScopeResolver", ZEND_ACC_PRIVATE, reg::PropertyKind::Typed, 0, "PHPStan\\Analyser\\ClosureBindScopeResolver");
 }
 
 /* the string and parameter tables the signatures below index into (see reg::Sig) */
@@ -42,67 +44,62 @@ inline constexpr char strings[] =
 	"PHPStan\\Analyser\\ExprHandler\\Helper\\DefaultNarrowingHelper\0" /* 163 */
 	"reflectionProvider\0" /* 222 */
 	"PHPStan\\Reflection\\ReflectionProvider\0" /* 241 */
-	"__construct\0" /* 279 */
-	"expr\0" /* 291 */
-	"PhpParser\\Node\\Expr\0" /* 296 */
-	"\0" /* 316 */
-	"supports\0" /* 317 */
-	"scope\0" /* 326 */
-	"PHPStan\\Analyser\\MutatingScope\0" /* 332 */
-	"class\0" /* 363 */
-	"PhpParser\\Node\\Expr|PhpParser\\Node\\Name\0" /* 369 */
-	"PHPStan\\Reflection\\ClassReflection\0" /* 409 */
-	"resolveClosureBindScopeReflection\0" /* 444 */
-	"nodeScopeResolver\0" /* 478 */
-	"PHPStan\\Analyser\\NodeScopeResolver\0" /* 496 */
-	"stmt\0" /* 531 */
-	"PhpParser\\Node\\Stmt\0" /* 536 */
-	"storage\0" /* 556 */
-	"PHPStan\\Analyser\\ExpressionResultStorage\0" /* 564 */
-	"nodeCallback\0" /* 605 */
-	"context\0" /* 618 */
-	"PHPStan\\Analyser\\ExpressionContext\0" /* 626 */
-	"PHPStan\\Analyser\\ExpressionResult\0" /* 661 */
-	"processExpr\0" /* 695 */
-	"PhpParser\\Node\\Expr\\ClassConstFetch\0" /* 707 */
-	"classResult\0" /* 743 */
-	"result\0" /* 755 */
-	"PHPStan\\Dependency\\Dependencies\0" /* 762 */
-	"getDependencies"; /* 794 */
+	"closureBindScopeResolver\0" /* 279 */
+	"PHPStan\\Analyser\\ClosureBindScopeResolver\0" /* 304 */
+	"__construct\0" /* 346 */
+	"expr\0" /* 358 */
+	"PhpParser\\Node\\Expr\0" /* 363 */
+	"\0" /* 383 */
+	"supports\0" /* 384 */
+	"nodeScopeResolver\0" /* 393 */
+	"PHPStan\\Analyser\\NodeScopeResolver\0" /* 411 */
+	"stmt\0" /* 446 */
+	"PhpParser\\Node\\Stmt\0" /* 451 */
+	"scope\0" /* 471 */
+	"PHPStan\\Analyser\\MutatingScope\0" /* 477 */
+	"storage\0" /* 508 */
+	"PHPStan\\Analyser\\ExpressionResultStorage\0" /* 516 */
+	"nodeCallback\0" /* 557 */
+	"context\0" /* 570 */
+	"PHPStan\\Analyser\\ExpressionContext\0" /* 578 */
+	"PHPStan\\Analyser\\ExpressionResult\0" /* 613 */
+	"processExpr\0" /* 647 */
+	"PhpParser\\Node\\Expr\\ClassConstFetch\0" /* 659 */
+	"classResult\0" /* 695 */
+	"result\0" /* 707 */
+	"PHPStan\\Dependency\\Dependencies\0" /* 714 */
+	"getDependencies"; /* 746 */
 inline constexpr reg::PackedArg args[] = {
 	reg::packed(0, 0, 28), /* __construct $initializerExprTypeResolver */
 	reg::packed(75, 0, 99), /* __construct $expressionResultFactory */
 	reg::packed(140, 0, 163), /* __construct $defaultNarrowingHelper */
 	reg::packed(222, 0, 241), /* __construct $reflectionProvider */
-	reg::packed(291, 0, 296), /* supports $expr */
-	reg::packed(316, MAY_BE_BOOL), /* supports return */
-	reg::packed(326, 0, 332), /* resolveClosureBindScopeReflection $scope */
-	reg::packed(363, 0, 369), /* resolveClosureBindScopeReflection $class */
-	reg::packed(316, MAY_BE_NULL, 409), /* resolveClosureBindScopeReflection return */
-	reg::packed(478, 0, 496), /* processExpr $nodeScopeResolver */
-	reg::packed(531, 0, 536), /* processExpr $stmt */
-	reg::packed(291, 0, 296), /* processExpr $expr */
-	reg::packed(326, 0, 332), /* processExpr $scope */
-	reg::packed(556, 0, 564), /* processExpr $storage */
-	reg::packed(605, MAY_BE_CALLABLE), /* processExpr $nodeCallback */
-	reg::packed(618, 0, 626), /* processExpr $context */
-	reg::packed(316, 0, 661), /* processExpr return */
-	reg::packed(326, 0, 332), /* getDependencies $scope */
-	reg::packed(291, 0, 707), /* getDependencies $expr */
-	reg::packed(743, MAY_BE_NULL, 661), /* getDependencies $classResult */
-	reg::packed(755, 0, 661), /* getDependencies $result */
-	reg::packed(316, MAY_BE_NULL, 762), /* getDependencies return */
+	reg::packed(279, 0, 304), /* __construct $closureBindScopeResolver */
+	reg::packed(358, 0, 363), /* supports $expr */
+	reg::packed(383, MAY_BE_BOOL), /* supports return */
+	reg::packed(393, 0, 411), /* processExpr $nodeScopeResolver */
+	reg::packed(446, 0, 451), /* processExpr $stmt */
+	reg::packed(358, 0, 363), /* processExpr $expr */
+	reg::packed(471, 0, 477), /* processExpr $scope */
+	reg::packed(508, 0, 516), /* processExpr $storage */
+	reg::packed(557, MAY_BE_CALLABLE), /* processExpr $nodeCallback */
+	reg::packed(570, 0, 578), /* processExpr $context */
+	reg::packed(383, 0, 613), /* processExpr return */
+	reg::packed(471, 0, 477), /* getDependencies $scope */
+	reg::packed(358, 0, 659), /* getDependencies $expr */
+	reg::packed(695, MAY_BE_NULL, 613), /* getDependencies $classResult */
+	reg::packed(707, 0, 613), /* getDependencies $result */
+	reg::packed(383, MAY_BE_NULL, 714), /* getDependencies return */
 };
 using Sig = reg::Sig<strings, args>;
 } // namespace sigtab
 
 /* the signatures of the methods the class declares itself (a used trait's are in the trait's header) */
 namespace sig {
-inline constexpr sigtab::Sig __construct = { { 279 /* __construct */, 4, 0, 4, reg::NoArg, ZEND_ACC_PUBLIC } };
-inline constexpr sigtab::Sig supports = { { 317 /* supports */, 1, 4, 1, 5, ZEND_ACC_PUBLIC } };
-inline constexpr sigtab::Sig resolveClosureBindScopeReflection = { { 444 /* resolveClosureBindScopeReflection */, 2, 6, 2, 8, ZEND_ACC_PRIVATE } };
-inline constexpr sigtab::Sig processExpr = { { 695 /* processExpr */, 7, 9, 7, 16, ZEND_ACC_PUBLIC } };
-inline constexpr sigtab::Sig getDependencies = { { 794 /* getDependencies */, 4, 17, 4, 21, ZEND_ACC_PRIVATE } };
+inline constexpr sigtab::Sig __construct = { { 346 /* __construct */, 5, 0, 5, reg::NoArg, ZEND_ACC_PUBLIC } };
+inline constexpr sigtab::Sig supports = { { 384 /* supports */, 1, 5, 1, 6, ZEND_ACC_PUBLIC } };
+inline constexpr sigtab::Sig processExpr = { { 647 /* processExpr */, 7, 7, 7, 14, ZEND_ACC_PUBLIC } };
+inline constexpr sigtab::Sig getDependencies = { { 746 /* getDependencies */, 4, 15, 4, 19, ZEND_ACC_PRIVATE } };
 } // namespace sig
 
 } // namespace ptdecl::ClassConstFetchHandler
