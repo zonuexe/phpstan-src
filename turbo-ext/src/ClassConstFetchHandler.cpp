@@ -154,6 +154,13 @@ public:
 			classReflection = pt_mutating_scope_get_class_reflection(Z_OBJ_P(beforeScope));
 			if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
 		}
+		{
+			zv::Val bindScopeReflection = resolveClosureBindScopeReflection(beforeScope, class_);
+			if (UNEXPECTED(bindScopeReflection.isUndef())) return zv::Val();
+			if (!bindScopeReflection.isNull()) {
+				classReflection = std::move(bindScopeReflection);
+			}
+		}
 
 		zv::Val variableFlow;
 		{
@@ -206,6 +213,48 @@ public:
 
 private:
 	zend_object *self;
+
+	/* Mirrors resolveClosureBindScopeReflection(): the Closure::bind() scope
+	 * class ClosureBindArgVisitor annotated on a self/parent/static name; IS_NULL
+	 * for null, UNDEF = pending exception */
+	zv::Val resolveClosureBindScopeReflection(zval *scope, zval *class_) const
+	{
+		int classIsName = isInstanceOf(class_, PT_CLASS_NAME);
+		if (UNEXPECTED(classIsName < 0)) return zv::Val();
+		if (!classIsName) return zv::Val::null();
+
+		/* hasAttribute() + getAttribute(): an absent attribute reads as null,
+		 * which the instanceof Expr test below rejects like the twin's
+		 * hasAttribute() pre-check */
+		zv::Val scopeArg = pt_engine_node_get_attribute(Z_OBJ_P(class_), PT_LC("closureBindScope"));
+		if (UNEXPECTED(scopeArg.isUndef())) return zv::Val();
+		int scopeArgIsExpr = isInstanceOf(scopeArg.raw(), PT_CLASS_EXPR);
+		if (UNEXPECTED(scopeArgIsExpr < 0)) return zv::Val();
+		if (!scopeArgIsExpr) {
+			// null attribute means the default "static" scope: keep the enclosing class.
+			return zv::Val::null();
+		}
+
+		zv::Val scopeArgType = pt_mutating_scope_get_type(Z_OBJ_P(scope), scopeArg.raw());
+		if (UNEXPECTED(scopeArgType.isUndef())) return zv::Val();
+		zv::Val classStringObjectType = pt_type_call(Z_OBJ_P(scopeArgType.raw()), PT_LC("getclassstringobjecttype"), 0, NULL);
+		if (UNEXPECTED(classStringObjectType.isUndef())) return zv::Val();
+		zv::Val objectClassNames = pt_type_op(Z_OBJ_P(classStringObjectType.raw()), PT_OP_GET_OBJECT_CLASS_NAMES, 0, NULL);
+		if (UNEXPECTED(objectClassNames.isUndef())) return zv::Val();
+		if (Z_TYPE_P(objectClassNames.raw()) != IS_ARRAY || zend_hash_num_elements(Z_ARRVAL_P(objectClassNames.raw())) != 1) return zv::Val::null();
+
+		/* $objectClassNames[0] — the only element of the list */
+		zval *className = NULL;
+		for (auto entry : zv::ArrRef(objectClassNames.raw())) {
+			className = entry.value().deref().raw();
+		}
+		zend_object *reflectionProvider = Z_OBJ_P(OBJ_PROP_NUM(self, slots::reflectionProvider));
+		bool hasClass;
+		if (UNEXPECTED(!pt_reflection_provider_has_class(reflectionProvider, className, hasClass))) return zv::Val();
+		if (!hasClass) return zv::Val::null();
+
+		return pt_reflection_provider_get_class(reflectionProvider, className);
+	}
 
 	/* Mirrors getDependencies(): the class the constant is fetched from, the
 	 * class declaring it, and the classes in its type ($classResult IS_NULL

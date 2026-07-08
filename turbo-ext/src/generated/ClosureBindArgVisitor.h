@@ -8,6 +8,11 @@
 
 namespace ptdecl::ClosureBindArgVisitor {
 
+/* the OBJ_PROP_NUM slots of the instance properties the class declares (the inherited ones come first) */
+namespace slot {
+inline constexpr uint32_t scopeStack = 0;
+} // namespace slot
+
 inline void declareClass(reg::Class &cls)
 {
 	cls.final();
@@ -17,7 +22,7 @@ inline void declareClass(reg::Class &cls)
 /* the properties the class declares itself, in declaration order (a used trait's come from its registrar) */
 inline void declareProperties(reg::Class &cls)
 {
-	(void) cls;
+	cls.property("scopeStack", ZEND_ACC_PRIVATE, reg::PropertyKind::TypedEmptyArray, MAY_BE_ARRAY);
 }
 
 /* the string and parameter tables the signatures below index into (see reg::Sig) */
@@ -26,10 +31,13 @@ inline constexpr char strings[] =
 	"node\0" /* 0 */
 	"PhpParser\\Node\0" /* 5 */
 	"\0" /* 20 */
-	"enterNode"; /* 21 */
+	"enterNode\0" /* 21 */
+	"leaveNode"; /* 31 */
 inline constexpr reg::PackedArg args[] = {
 	reg::packed(0, 0, 5), /* enterNode $node */
 	reg::packed(20, MAY_BE_NULL, 5), /* enterNode return */
+	reg::packed(0, 0, 5), /* leaveNode $node */
+	reg::packed(20, MAY_BE_NULL, 5), /* leaveNode return */
 };
 using Sig = reg::Sig<strings, args>;
 } // namespace sigtab
@@ -37,6 +45,7 @@ using Sig = reg::Sig<strings, args>;
 /* the signatures of the methods the class declares itself (a used trait's are in the trait's header) */
 namespace sig {
 inline constexpr sigtab::Sig enterNode = { { 21 /* enterNode */, 1, 0, 1, 1, ZEND_ACC_PUBLIC } };
+inline constexpr sigtab::Sig leaveNode = { { 31 /* leaveNode */, 1, 2, 1, 3, ZEND_ACC_PUBLIC } };
 } // namespace sig
 
 } // namespace ptdecl::ClosureBindArgVisitor

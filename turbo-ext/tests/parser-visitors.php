@@ -73,6 +73,12 @@ $parserVisitorSnippets = [
 	'<?php $c->bindTo($obj); $c->bindTo(); $c->bindTo(...); $c->BINDTO($obj); $c->other($obj);',
 	'<?php Closure::bind($c, $obj); Closure::bind($c); \Closure::bind($c, $obj, "X"); Closure::bind(...);
 		Closure::fromCallable($c); Other::bind($c, $obj);',
+	// self/parent/static names inside Closure::bind() calls get the scope argument
+	'<?php
+		self::A; Closure::bind(function () { return [self::A, static::b(), new parent(), Other::C]; }, null, Foo::class);
+		Closure::bind(fn () => SELF::$p, $obj); \Closure::bind(static function () { return parent::X; }, null, self::class);
+		Closure::bind(function () { return Closure::bind(fn () => static::B, null, Inner::class)() + self::C; }, null, Outer::class);
+		Closure::bind($callable, null, Foo::class); Closure::bind(...); static::D;',
 
 	// array offsets: every literal spelling the normalizer canonicalises
 	'<?php echo $a[\'k\'], $a["k"], $a["a\nb"], $a["$x"], $a["pre{$x}post"], $a[1], $a[0x1F], $a[0b11], $a[$i], $a[C], $a[];',
