@@ -2,6 +2,7 @@
 
 namespace PHPStan\Rules\Properties;
 
+use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Php\PhpVersion;
 use PHPStan\Rules\ClassCaseSensitivityCheck;
 use PHPStan\Rules\ClassForbiddenNameCheck;
@@ -41,6 +42,7 @@ class AccessStaticPropertiesInAssignRuleTest extends RuleTestCase
 					self::getContainer(),
 				),
 				new PhpVersion(PHP_VERSION_ID),
+				new ClosureBindScopeResolver($reflectionProvider),
 				discoveringSymbolsTip: true,
 			),
 		);

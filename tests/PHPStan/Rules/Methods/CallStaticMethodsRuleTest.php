@@ -2,6 +2,7 @@
 
 namespace PHPStan\Rules\Methods;
 
+use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Rules\ClassCaseSensitivityCheck;
 use PHPStan\Rules\ClassForbiddenNameCheck;
 use PHPStan\Rules\ClassNameCheck;
@@ -56,6 +57,7 @@ class CallStaticMethodsRuleTest extends RuleTestCase
 					$reflectionProvider,
 					$container,
 				),
+				new ClosureBindScopeResolver($reflectionProvider),
 				checkFunctionNameCase: true,
 				discoveringSymbolsTip: true,
 				reportMagicMethods: true,
