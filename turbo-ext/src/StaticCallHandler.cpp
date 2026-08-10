@@ -438,7 +438,7 @@ public:
 							return zv::Val();
 						}
 						if (zend_string_equals_literal_ci(Z_STR_P(methodNameHold.raw()), "bind")) {
-							closureBindScopeFactory = pt_native_closure(&closureBindScopeFactoryBody, expr, storage);
+							closureBindScopeFactory = pt_native_closure(&closureBindScopeFactoryBody, expr, storage, parametersAcceptor.raw());
 						}
 					}
 				} else {
@@ -1341,9 +1341,9 @@ private:
 		return currentScope;
 	}
 
-	/* static function (MutatingScope $boundScope) use ($expr, $storage):
-	 * MutatingScope — the Closure::bind() scope factory; captures: $expr,
-	 * $storage */
+	/* static function (MutatingScope $boundScope) use ($expr, $storage,
+	 * $parametersAcceptor): MutatingScope — the Closure::bind() scope factory;
+	 * captures: $expr, $storage, $parametersAcceptor */
 	static void closureBindScopeFactoryBody(zval *captures, uint32_t argc, zval *argv, zval *return_value)
 	{
 		if (UNEXPECTED(!requireArguments(argc, 1, "PHPStan\\Analyser\\ExprHandler\\StaticCallHandler::{closure}"))) return;
@@ -1352,8 +1352,12 @@ private:
 			zend_type_error("PHPStan\\Analyser\\ExprHandler\\StaticCallHandler::{closure}(): Argument #1 ($boundScope) must be of type PHPStan\\Analyser\\MutatingScope, %s given", zend_zval_value_name(boundScope));
 			return;
 		}
-		zval *expr = &captures[0];
 		zval *storage = &captures[1];
+		// normalized so that $newThis and $newScope are found at their
+		// parameter positions even when the call names its arguments
+		zv::Val normalizedExpr = reorderStaticCallArguments(&captures[2], &captures[0]);
+		if (UNEXPECTED(normalizedExpr.isUndef())) return;
+		zval *expr = normalizedExpr.isNull() ? &captures[0] : normalizedExpr.raw();
 
 		zv::Val thisType = zv::Val::null();
 		zv::Val nativeThisType = zv::Val::null();
