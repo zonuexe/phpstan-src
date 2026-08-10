@@ -5,11 +5,12 @@
  * original).
  *
  * Marks the closure argument of a Closure::bind() call that also passes a
- * new $this, and annotates the self/parent/static names inside an inline
- * closure/arrow function bound that way with the call's scope argument — a
- * top-first stack of the scope arguments of the enclosing bound closures
- * (null for the default "static" scope), entered and left at the closure
- * nodes recorded by object id in $boundClosures.
+ * new $this (each argument found by position or by name), and annotates the
+ * self/parent/static names inside an inline closure/arrow function bound
+ * that way with the call's scope argument — a top-first stack of the scope
+ * arguments of the enclosing bound closures (null for the default "static"
+ * scope), entered and left at the closure nodes recorded by object id in
+ * $boundClosures.
  *
  * enterNode()/leaveNode() always return null and beforeTraverse() only
  * resets the per-file state, so the visitor is also registered with
@@ -49,28 +50,28 @@ public:
 	/* enterNode(); the twin always returns null, false = pending exception */
 	[[nodiscard]] static bool enterNode(zend_object *visitor, zend_object *node)
 	{
-		static NodeProp argValueProp = PT_NODE_PROP(PT_CLASS_ARG, "value");
-
 		zval *args = NULL;
 		if (!isClosureBindCall(node, &args)) {
 			if (UNEXPECTED(EG(exception))) return false;
-		} else if (args != NULL && Z_TYPE_P(args) == IS_ARRAY && zend_hash_num_elements(Z_ARRVAL_P(args)) > 1) {
-			zend_object *arg = visitors::argAt(args, 0);
-			if (arg != NULL) {
-				visitors::setAttributeTrue(arg, pt_closure_bind_arg_attribute_str);
-				if (UNEXPECTED(EG(exception))) return false;
+		} else {
+			BindArgs bindArgs;
+			findBindArgs(args, bindArgs);
+			if (bindArgs.closure != NULL) {
+				if (bindArgs.newThis != NULL) {
+					visitors::setAttributeTrue(bindArgs.closure, pt_closure_bind_arg_attribute_str);
+					if (UNEXPECTED(EG(exception))) return false;
+				}
 
-				zval *closure = visitors::isInstanceOf(arg, PT_CLASS_ARG) ? argValueProp.of(arg) : NULL;
+				zval *closure = argValue(bindArgs.closure);
 				if (closure != NULL && Z_TYPE_P(closure) == IS_OBJECT
 					&& (visitors::isInstanceOf(Z_OBJ_P(closure), PT_CLASS_CLOSURE_EXPR) || visitors::isInstanceOf(Z_OBJ_P(closure), PT_CLASS_ARROW_FUNCTION))) {
 					/* $this->boundClosures[spl_object_id($closure)] =
-					 * $args[2]->value ?? null — null means default scope
-					 * "static" */
+					 * $newScopeArg !== null ? $newScopeArg->value : null —
+					 * null means default scope "static" */
 					zval scope;
 					ZVAL_NULL(&scope);
-					zend_object *scopeArg = visitors::argAt(args, 2);
-					if (scopeArg != NULL && visitors::isInstanceOf(scopeArg, PT_CLASS_ARG)) {
-						zval *value = argValueProp.of(scopeArg);
+					if (bindArgs.newScope != NULL) {
+						zval *value = argValue(bindArgs.newScope);
 						if (value != NULL) {
 							ZVAL_COPY_VALUE(&scope, value);
 						}
@@ -98,6 +99,65 @@ public:
 	}
 
 private:
+	/* the $closureArg / $newThisArg / $newScopeArg the twin picks out of the
+	 * call's arguments; NULL for null */
+	struct BindArgs
+	{
+		zend_object *closure = NULL;
+		zend_object *newThis = NULL;
+		zend_object *newScope = NULL;
+	};
+
+	/*
+	 * foreach ($node->getArgs() as $i => $arg): an unnamed argument by its
+	 * position (0, 1, 2), a named one by its name (closure, newThis,
+	 * newScope); a later match replaces an earlier one
+	 */
+	static void findBindArgs(zval *args, BindArgs &out)
+	{
+		static NodeProp argNameProp = PT_NODE_PROP(PT_CLASS_ARG, "name");
+		static NodeProp identifierProp = PT_IDENTIFIER_PROP;
+
+		if (args == NULL || Z_TYPE_P(args) != IS_ARRAY) return;
+		for (auto entry : zv::ArrRef(args)) {
+			zv::Ref value = entry.value().deref();
+			if (!value.isObject()) continue;
+			zend_object *arg = value.asObject();
+			zend_object *name = visitors::isInstanceOf(arg, PT_CLASS_ARG) ? argNameProp.objectOf(arg, PT_CLASS_IDENTIFIER) : NULL;
+			if (name == NULL) {
+				if (entry.hasStringKey()) continue;
+				zend_ulong i = entry.indexKey();
+				if (i == 0) {
+					out.closure = arg;
+				} else if (i == 1) {
+					out.newThis = arg;
+				} else if (i == 2) {
+					out.newScope = arg;
+				}
+				continue;
+			}
+
+			/* $arg->name->toString() */
+			zend_string *argName = visitors::nameString(name, identifierProp);
+			if (argName == NULL) continue;
+			if (zend_string_equals_literal(argName, "closure")) {
+				out.closure = arg;
+			} else if (zend_string_equals_literal(argName, "newThis")) {
+				out.newThis = arg;
+			} else if (zend_string_equals_literal(argName, "newScope")) {
+				out.newScope = arg;
+			}
+		}
+	}
+
+	/* $arg->value of an Arg; NULL for anything else */
+	static zval *argValue(zend_object *arg)
+	{
+		static NodeProp argValueProp = PT_NODE_PROP(PT_CLASS_ARG, "value");
+
+		return visitors::isInstanceOf(arg, PT_CLASS_ARG) ? argValueProp.of(arg) : NULL;
+	}
+
 	/*
 	 * `$node instanceof StaticCall && $node->class instanceof Name &&
 	 * $node->class->toLowerString() === 'closure' && $node->name instanceof
