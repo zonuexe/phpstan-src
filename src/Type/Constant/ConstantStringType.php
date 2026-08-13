@@ -385,7 +385,6 @@ class ConstantStringType extends StringType implements ConstantScalarType
 			return $this->arrayKeyType;
 		}
 
-		/** @var int|string $offsetValue */
 		$offsetValue = key([$this->value => null]);
 
 		if ($offsetValue === $this->value) {

@@ -149,7 +149,6 @@ final class ArgumentsNormalizer
 		foreach ($argsArrayArg->value->items as $item) {
 			$key = null;
 			if ($item->key instanceof String_) {
-				/** @var int|string $key */
 				$key = key([$item->key->value => null]);
 				if ($key === '') {
 					return null;
