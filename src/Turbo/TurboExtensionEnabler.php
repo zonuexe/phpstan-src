@@ -33,7 +33,7 @@ use function phpversion;
 final class TurboExtensionEnabler
 {
 
-	public const EXPECTED_EXTENSION_VERSION = 'c135511';
+	public const EXPECTED_EXTENSION_VERSION = 'faee9a4';
 
 	private static bool $active = false;
 
