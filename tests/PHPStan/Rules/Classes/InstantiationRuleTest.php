@@ -845,4 +845,18 @@ class InstantiationRuleTest extends RuleTestCase
 		$this->analyse([__DIR__ . '/data/closure-bind-scope-nested-class.php'], []);
 	}
 
+	public function testClosureBindScopeAmbiguous(): void
+	{
+		$this->analyse([__DIR__ . '/data/closure-bind-scope-ambiguous.php'], [
+			[
+				'Using self outside of class scope.',
+				49,
+			],
+			[
+				'Using self outside of class scope.',
+				50,
+			],
+		]);
+	}
+
 }

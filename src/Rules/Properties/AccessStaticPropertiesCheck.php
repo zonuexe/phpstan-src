@@ -96,6 +96,9 @@ final class AccessStaticPropertiesCheck
 			$class = (string) $node->class;
 			$lowercasedClass = strtolower($class);
 			$selfClassReflection = SelfClassResolver::resolve($scope, $this->reflectionProvider);
+			if (in_array($lowercasedClass, ['self', 'static', 'parent'], true) && SelfClassResolver::isAmbiguous($scope)) {
+				return [];
+			}
 			if (in_array($lowercasedClass, ['self', 'static'], true)) {
 				if ($selfClassReflection === null) {
 					return [

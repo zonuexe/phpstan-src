@@ -335,6 +335,9 @@ enum : uint32_t
 	PT_MS_PROP_COUNT,
 };
 
+/* public const UNKNOWN_CLOSURE_BIND_SCOPE_CLASS */
+#define PT_MS_UNKNOWN_CLOSURE_BIND_SCOPE_CLASS "*"
+
 /* private const COMPLEX_UNION_TYPE_MEMBER_LIMIT */
 #define PT_MS_COMPLEX_UNION_TYPE_MEMBER_LIMIT 8
 
@@ -3503,6 +3506,23 @@ public:
 			}
 		}
 
+		if (Z_TYPE_P(lower.raw()) == IS_STRING
+			&& (zend_string_equals_literal(Z_STR_P(lower.raw()), "self") || zend_string_equals_literal(Z_STR_P(lower.raw()), "static"))) {
+			bool inClass;
+			if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
+			if (!inClass) {
+				// bound to one of several classes: the closest class they all extend, if any
+				zv::Val commonAncestor = getClosureBindScopeCommonAncestor();
+				if (UNEXPECTED(commonAncestor.isUndef())) return zv::Val();
+				if (!commonAncestor.isNull()) {
+					if (zend_string_equals_literal(Z_STR_P(lower.raw()), "static")) return newStaticType(commonAncestor, "StaticType");
+					zv::Val ancestorName = pt_class_reflection_get_name(Z_OBJ_P(commonAncestor.raw()));
+					if (UNEXPECTED(ancestorName.isUndef())) return zv::Val();
+					return pt_type_new_object_type(ancestorName.raw());
+				}
+			}
+		}
+
 		zval nameZv;
 		ZVAL_OBJ(&nameZv, name);
 		zv::Val originalClass = thisResolveName(&nameZv);
@@ -3562,10 +3582,82 @@ public:
 	{
 		if (UNEXPECTED(!requireSlot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES, "inClosureBindScopeClasses"))) return zv::Val();
 		HashTable *bindScopeClasses = Z_ARRVAL_P(slot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES).raw());
-		if (zend_hash_num_elements(bindScopeClasses) == 0 || isSingleStringList(bindScopeClasses, PT_LC("static"))) return zv::Val::null();
+		if (
+			zend_hash_num_elements(bindScopeClasses) == 0
+			|| isSingleStringList(bindScopeClasses, PT_LC("static"))
+			|| isSingleStringList(bindScopeClasses, PT_LC(PT_MS_UNKNOWN_CLOSURE_BIND_SCOPE_CLASS))
+		) return zv::Val::null();
+
+		// one of several classes: outside a class there is no class to fall back to, so
+		// only the class of a single-class bind is known
+		if (zend_hash_num_elements(bindScopeClasses) > 1) {
+			bool inClass;
+			if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
+			if (!inClass) return zv::Val::null();
+		}
+
 		zend_string *first = firstBindScopeClass(bindScopeClasses, "getClosureBindScopeClassName");
 		if (UNEXPECTED(first == NULL)) return zv::Val();
 		return zv::Val::string(first);
+	}
+
+	/* Mirrors isClosureBindScopeClassAmbiguous(); false = pending exception */
+	[[nodiscard]] bool isClosureBindScopeClassAmbiguous(bool &out)
+	{
+		if (UNEXPECTED(!requireSlot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES, "inClosureBindScopeClasses"))) return false;
+		HashTable *bindScopeClasses = Z_ARRVAL_P(slot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES).raw());
+		out = zend_hash_num_elements(bindScopeClasses) > 1
+			|| isSingleStringList(bindScopeClasses, PT_LC(PT_MS_UNKNOWN_CLOSURE_BIND_SCOPE_CLASS));
+		return true;
+	}
+
+	/* Mirrors getClosureBindScopeCommonAncestor(): the closest class all
+	 * classes of an ambiguous Closure::bind() scope are or extend; IS_NULL for
+	 * null, UNDEF = pending exception */
+	zv::Val getClosureBindScopeCommonAncestor()
+	{
+		if (UNEXPECTED(!requireSlot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES, "inClosureBindScopeClasses"))) return zv::Val();
+		zval *bindScopeClassesZv = slot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES).raw();
+		if (zend_hash_num_elements(Z_ARRVAL_P(bindScopeClassesZv)) < 2) return zv::Val::null();
+
+		zv::Ref provider = slot(PT_MS_PROP_REFLECTION_PROVIDER);
+		if (UNEXPECTED(!provider.isObject())) return uninitializedProperty("reflectionProvider");
+		zv::Arr classReflections = zv::Arr::create(zend_hash_num_elements(Z_ARRVAL_P(bindScopeClassesZv)));
+		for (auto entry : zv::ArrRef(bindScopeClassesZv)) {
+			zval *className = entry.value().deref().raw();
+			bool hasClass;
+			if (UNEXPECTED(!pt_reflection_provider_has_class(provider.asObject(), className, hasClass))) return zv::Val();
+			if (!hasClass) return zv::Val::null();
+			zv::Val classReflection = pt_reflection_provider_get_class(provider.asObject(), className);
+			if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
+			classReflections.push(std::move(classReflection));
+		}
+
+		zv::Val candidate = zv::Val::copyOf(zv::Ref(zend_hash_index_find(classReflections.table(), 0)));
+		while (!candidate.isNull()) {
+			zend_object *candidateObject = requireObject(candidate, "getName");
+			if (UNEXPECTED(candidateObject == NULL)) return zv::Val();
+			zv::Val candidateName = pt_class_reflection_get_name(candidateObject);
+			if (UNEXPECTED(candidateName.isUndef())) return zv::Val();
+			bool sharedByAll = true;
+			for (auto entry : zv::ArrRef(classReflections.raw())) {
+				zval *classReflection = entry.value().deref().raw();
+				zv::Val name = pt_class_reflection_get_name(Z_OBJ_P(classReflection));
+				if (UNEXPECTED(name.isUndef())) return zv::Val();
+				if (Z_TYPE_P(name.raw()) == IS_STRING && Z_TYPE_P(candidateName.raw()) == IS_STRING && zend_string_equals(Z_STR_P(name.raw()), Z_STR_P(candidateName.raw()))) continue;
+				bool isSubclass;
+				if (UNEXPECTED(!pt_class_reflection_is_subclass_of_class(Z_OBJ_P(classReflection), candidate.raw(), isSubclass))) return zv::Val();
+				if (!isSubclass) {
+					sharedByAll = false;
+					break;
+				}
+			}
+			if (sharedByAll) return candidate;
+			candidate = pt_type_call(candidateObject, PT_LC("getparentclass"), 0, NULL);
+			if (UNEXPECTED(candidate.isUndef())) return zv::Val();
+		}
+
+		return zv::Val::null();
 	}
 
 	/* Mirrors getClosureBindScopeClassReflection(); IS_NULL for null, UNDEF =
@@ -12477,6 +12569,7 @@ PT_MINIT_REGISTRATION(pt_register_mutating_scope)
 	 * may too), so every method stays dispatched through the object's
 	 * class entry */
 	ptdecl::MutatingScope::declareClass(cls);
+	cls.publicClassConstantString("UNKNOWN_CLOSURE_BIND_SCOPE_CLASS", PT_MS_UNKNOWN_CLOSURE_BIND_SCOPE_CLASS);
 
 	/* {{{ the slots, in the twin's declaration order (the PT_MS_PROP_*
 	 * enum): the class-body properties with their defaults, then the
@@ -13085,6 +13178,11 @@ PT_MINIT_REGISTRATION(pt_register_mutating_scope)
 	});
 
 	cls.method<&MutatingScope::enterClosureCall, zp::Obj, zp::Obj>(sigs::enterClosureCall);
+
+	cls.method(sigs::isClosureBindScopeClassAmbiguous, [](INTERNAL_FUNCTION_PARAMETERS) {
+		ZEND_PARSE_PARAMETERS_NONE();
+		PT_MS_RETURN_BOOL(PT_THIS.isClosureBindScopeClassAmbiguous(out_));
+	});
 
 	cls.method(sigs::isInClosureBind, [](INTERNAL_FUNCTION_PARAMETERS) {
 		ZEND_PARSE_PARAMETERS_NONE();

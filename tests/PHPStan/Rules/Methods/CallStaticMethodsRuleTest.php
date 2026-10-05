@@ -1212,4 +1212,16 @@ class CallStaticMethodsRuleTest extends RuleTestCase
 		$this->analyse([__DIR__ . '/data/bug-6319.php'], []);
 	}
 
+	#[RequiresPhp('>= 8.1.0')]
+	public function testClosureBindScopeAmbiguous(): void
+	{
+		$this->checkThisOnly = false;
+		$this->analyse([__DIR__ . '/data/closure-bind-scope-ambiguous.php'], [
+			[
+				'Calling self::sm() outside of class scope.',
+				39,
+			],
+		]);
+	}
+
 }

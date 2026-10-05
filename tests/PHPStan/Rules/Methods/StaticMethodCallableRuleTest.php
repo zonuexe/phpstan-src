@@ -162,4 +162,15 @@ class StaticMethodCallableRuleTest extends RuleTestCase
 		]);
 	}
 
+	#[RequiresPhp('>= 8.1.0')]
+	public function testClosureBindScopeAmbiguous(): void
+	{
+		$this->analyse([__DIR__ . '/data/closure-bind-scope-ambiguous.php'], [
+			[
+				'Calling self::sm() outside of class scope.',
+				39,
+			],
+		]);
+	}
+
 }

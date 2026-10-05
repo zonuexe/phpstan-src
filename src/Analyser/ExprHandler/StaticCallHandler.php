@@ -46,6 +46,7 @@ use PHPStan\Reflection\ParametersAcceptorSelector;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\ShouldNotHappenException;
 use PHPStan\Turbo\ShadowedByTurboExtension;
+use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\ErrorType;
 use PHPStan\Type\Generic\TemplateTypeHelper;
 use PHPStan\Type\Generic\TemplateTypeVariance;
@@ -189,9 +190,13 @@ final class StaticCallHandler implements ExprHandler
 								}
 							}
 							$scopeClasses = ['static'];
+							$bindsUnknownScopeClass = false;
 							if (isset($expr->getArgs()[2])) {
 								$argValue = $expr->getArgs()[2]->value;
 								$argValueType = $readArgType($argValue, false);
+								// a newScope that may name a class binds to one even when it is unknown
+								$bindsUnknownScopeClass = !$argValueType->isNull()->yes()
+									&& !(new ConstantStringType('static'))->isSuperTypeOf($argValueType)->yes();
 
 								$directClassNames = $argValueType->getObjectClassNames();
 								if (count($directClassNames) > 0) {
@@ -205,6 +210,9 @@ final class StaticCallHandler implements ExprHandler
 									$thisType = $argValueType->getClassStringObjectType();
 									$scopeClasses = $thisType->getObjectClassNames();
 								}
+							}
+							if ($scopeClasses === [] && $bindsUnknownScopeClass) {
+								$scopeClasses = [MutatingScope::UNKNOWN_CLOSURE_BIND_SCOPE_CLASS];
 							}
 							return $boundScope->enterClosureBind($thisType, $nativeThisType, $scopeClasses);
 						};

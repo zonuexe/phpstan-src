@@ -190,6 +190,8 @@ zend_string *pt_sch_method_call = nullptr;
 zend_string *pt_sch_unknown_method = nullptr;
 zend_string *pt_sch_this = nullptr;
 zend_string *pt_sch_static = nullptr;
+/* MutatingScope::UNKNOWN_CLOSURE_BIND_SCOPE_CLASS */
+zend_string *pt_sch_unknown_scope_class = nullptr;
 
 /* $list[0] of a count-1 list, with the engine's warning (and null) for a
  * missing key; NULL = pending exception */
@@ -1392,12 +1394,15 @@ private:
 			list.push(zv::Ref(&staticName));
 			scopeClasses = zv::Val(std::move(list));
 		}
+		bool bindsUnknownScopeClass = false;
 		zval *thirdArg = argAt(args, 2);
 		if (thirdArg != NULL) {
 			zval *value = argValue(thirdArg);
 			if (UNEXPECTED(value == NULL)) return;
 			zv::Val argValueType = readArgType(boundScope, storage, value, false);
 			if (UNEXPECTED(argValueType.isUndef())) return;
+			// a newScope that may name a class binds to one even when it is unknown
+			if (UNEXPECTED(!bindsUnknownScopeClassOf(argValueType.raw(), bindsUnknownScopeClass))) return;
 
 			zv::Val directClassNames = pt_type_op(Z_OBJ_P(argValueType.raw()), PT_OP_GET_OBJECT_CLASS_NAMES, 0, NULL);
 			if (UNEXPECTED(directClassNames.isUndef())) return;
@@ -1427,9 +1432,33 @@ private:
 				scopeClasses = std::move(classNames);
 			}
 		}
+		if (bindsUnknownScopeClass && zend_hash_num_elements(Z_ARRVAL_P(scopeClasses.raw())) == 0) {
+			zv::Arr unknown = zv::Arr::create(1);
+			unknown.push(zv::Val::string(pt_sch_unknown_scope_class));
+			scopeClasses = zv::Val(std::move(unknown));
+		}
 		zv::Val bound = pt_mutating_scope_enter_closure_bind(Z_OBJ_P(boundScope), thisType.raw(), nativeThisType.raw(), scopeClasses.raw());
 		if (UNEXPECTED(bound.isUndef())) return;
 		bound.intoReturnValue(return_value);
+	}
+
+	/* !$argValueType->isNull()->yes() && !(new ConstantStringType('static'))
+	 * ->isSuperTypeOf($argValueType)->yes(); false = pending exception */
+	[[nodiscard]] static bool bindsUnknownScopeClassOf(zval *argValueType, bool &out)
+	{
+		out = false;
+		zend_long isNull = pt_type_op_trinary(Z_OBJ_P(argValueType), PT_OP_IS_NULL, 0, NULL);
+		if (UNEXPECTED(isNull < 0)) return false;
+		if (isNull == PT_TRI_YES) return true;
+		zval staticType;
+		if (UNEXPECTED(!pt_constant_string_type_new(&staticType, pt_sch_static))) return false;
+		zv::Val staticTypeHold = zv::Val::adopt(staticType);
+		zv::Val isStatic = pt_type_op(Z_OBJ_P(staticTypeHold.raw()), PT_OP_IS_SUPER_TYPE_OF, 1, argValueType);
+		if (UNEXPECTED(isStatic.isUndef())) return false;
+		zend_long isStaticValue = pt_type_result_trinary(isStatic.raw());
+		if (UNEXPECTED(isStaticValue < 0)) return false;
+		out = isStaticValue != PT_TRI_YES;
+		return true;
 	}
 
 	/* $readArgType($argValue, $useNativeTypes) of the scope factory: the
@@ -1538,6 +1567,7 @@ PT_MINIT_REGISTRATION(pt_register_static_call_handler)
 	pt_sch_unknown_method = zend_string_init_interned(PT_LC("call to unknown method"), 1);
 	pt_sch_this = zend_string_init_interned(PT_LC("this"), 1);
 	pt_sch_static = zend_string_init_interned(PT_LC("static"), 1);
+	pt_sch_unknown_scope_class = zend_string_init_interned(PT_LC("*"), 1);
 
 	reg::Class cls("PHPStan\\Analyser\\ExprHandler\\StaticCallHandler");
 	ptdecl::StaticCallHandler::declareClass(cls);

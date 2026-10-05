@@ -153,6 +153,13 @@ use const PHP_INT_MIN;
 class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter, DependencyTracker
 {
 
+	/**
+	 * Stands for the class of a Closure::bind() newScope whose class is not known (a
+	 * class-string or string without a class name). It is never a class name, so the
+	 * scope stays bound - unlike an empty list - without resolving to any class.
+	 */
+	public const UNKNOWN_CLOSURE_BIND_SCOPE_CLASS = '*';
+
 	private const COMPLEX_UNION_TYPE_MEMBER_LIMIT = 8;
 
 	/** Distinct name/namespace combinations getGlobalConstantType() remembers the expression keys of. */
@@ -1818,6 +1825,14 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 			}
 		}
 
+		if (!$this->isInClass() && in_array($name->toLowerString(), ['self', 'static'], true)) {
+			// bound to one of several classes: the closest class they all extend, if any
+			$commonAncestor = $this->getClosureBindScopeCommonAncestor();
+			if ($commonAncestor !== null) {
+				return $name->toLowerString() === 'static' ? new StaticType($commonAncestor) : new ObjectType($commonAncestor->getName());
+			}
+		}
+
 		$originalClass = $this->resolveName($name);
 		// outside a class only self/parent/static follow the Closure::bind() scope;
 		// inside one any name of the bound class does, as before
@@ -1851,11 +1866,65 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 	 */
 	private function getClosureBindScopeClassName(): ?string
 	{
-		if ($this->inClosureBindScopeClasses === [] || $this->inClosureBindScopeClasses === ['static']) {
+		if (
+			$this->inClosureBindScopeClasses === []
+			|| $this->inClosureBindScopeClasses === ['static']
+			|| $this->inClosureBindScopeClasses === [self::UNKNOWN_CLOSURE_BIND_SCOPE_CLASS]
+		) {
+			return null;
+		}
+
+		// one of several classes: outside a class there is no class to fall back to, so
+		// only the class of a single-class bind is known
+		if (!$this->isInClass() && count($this->inClosureBindScopeClasses) > 1) {
 			return null;
 		}
 
 		return $this->inClosureBindScopeClasses[0];
+	}
+
+	/**
+	 * Whether this scope is bound by Closure::bind() to a class that is not exactly one
+	 * known class: one of several classes, or a class-string/string newScope whose class
+	 * is unknown. self/parent/static then name some class that cannot be checked.
+	 */
+	public function isClosureBindScopeClassAmbiguous(): bool
+	{
+		return count($this->inClosureBindScopeClasses) > 1
+			|| $this->inClosureBindScopeClasses === [self::UNKNOWN_CLOSURE_BIND_SCOPE_CLASS];
+	}
+
+	/**
+	 * The closest class all classes of an ambiguous Closure::bind() scope are or extend,
+	 * null when the scope is not bound to several known classes or they share none.
+	 */
+	private function getClosureBindScopeCommonAncestor(): ?ClassReflection
+	{
+		if (count($this->inClosureBindScopeClasses) < 2) {
+			return null;
+		}
+
+		$classReflections = [];
+		foreach ($this->inClosureBindScopeClasses as $className) {
+			if (!$this->reflectionProvider->hasClass($className)) {
+				return null;
+			}
+			$classReflections[] = $this->reflectionProvider->getClass($className);
+		}
+
+		$candidate = $classReflections[0];
+		while ($candidate !== null) {
+			foreach ($classReflections as $classReflection) {
+				if ($classReflection->getName() !== $candidate->getName() && !$classReflection->isSubclassOfClass($candidate)) {
+					$candidate = $candidate->getParentClass();
+					continue 2;
+				}
+			}
+
+			return $candidate;
+		}
+
+		return null;
 	}
 
 	/**

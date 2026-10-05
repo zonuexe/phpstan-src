@@ -132,7 +132,11 @@ final class InstantiationRule implements Rule
 		$lowercasedClass = strtolower($class);
 		$messages = [];
 		$isStatic = false;
-		$selfClassReflection = in_array($lowercasedClass, ['self', 'static', 'parent'], true)
+		$isSelfClass = in_array($lowercasedClass, ['self', 'static', 'parent'], true);
+		if ($isSelfClass && SelfClassResolver::isAmbiguous($scope)) {
+			return [];
+		}
+		$selfClassReflection = $isSelfClass
 			? SelfClassResolver::resolve($scope, $this->reflectionProvider)
 			: null;
 		if ($lowercasedClass === 'static') {

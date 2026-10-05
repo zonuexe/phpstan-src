@@ -127,4 +127,9 @@ class AccessStaticPropertiesInAssignRuleTest extends RuleTestCase
 		]);
 	}
 
+	public function testClosureBindScopeAmbiguous(): void
+	{
+		$this->analyse([__DIR__ . '/data/closure-bind-scope-ambiguous.php'], []);
+	}
+
 }

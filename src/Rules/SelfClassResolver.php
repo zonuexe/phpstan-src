@@ -3,6 +3,7 @@
 namespace PHPStan\Rules;
 
 use PhpParser\Node\Name;
+use PHPStan\Analyser\MutatingScope;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
 use PHPStan\Reflection\ReflectionProvider;
@@ -14,6 +15,16 @@ use function strtolower;
  */
 final class SelfClassResolver
 {
+
+	/**
+	 * Whether `self`, `static` and `parent` name a class that cannot be checked: the
+	 * closure is bound to one of several classes, or to a class-string whose class is
+	 * unknown. Rules stay silent then rather than check a class that may be the wrong one.
+	 */
+	public static function isAmbiguous(Scope $scope): bool
+	{
+		return $scope instanceof MutatingScope && $scope->isClosureBindScopeClassAmbiguous();
+	}
 
 	/**
 	 * Null when there is no such class (outside a class, and not inside a closure bound to
