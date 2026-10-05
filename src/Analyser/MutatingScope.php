@@ -1795,20 +1795,24 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 			}
 		}
 
-		if ($this->isInClass()) {
-			if (in_array($lowerClass, [
-				'self',
-				'static',
-			], true)) {
-				if ($this->inClosureBindScopeClasses !== [] && $this->inClosureBindScopeClasses !== ['static']) {
-					return $this->inClosureBindScopeClasses[0];
-				}
+		$closureBindScopeClassName = $this->getClosureBindScopeClassName();
+		if (in_array($lowerClass, [
+			'self',
+			'static',
+		], true)) {
+			if ($closureBindScopeClassName !== null) {
+				return $closureBindScopeClassName;
+			}
+			if ($this->isInClass()) {
 				return $this->getClassReflection()->getName();
-			} elseif ($lowerClass === 'parent') {
+			}
+		} elseif ($lowerClass === 'parent') {
+			$currentClassReflection = $this->getClosureBindScopeClassReflection();
+			if ($currentClassReflection === null && $closureBindScopeClassName === null && $this->isInClass()) {
 				$currentClassReflection = $this->getClassReflection();
-				if ($currentClassReflection->getParentClass() !== null) {
-					return $currentClassReflection->getParentClass()->getName();
-				}
+			}
+			if ($currentClassReflection !== null && $currentClassReflection->getParentClass() !== null) {
+				return $currentClassReflection->getParentClass()->getName();
 			}
 		}
 
@@ -1823,13 +1827,11 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 			if ($bindScopeClassReflection !== null) {
 				return new StaticType($bindScopeClassReflection);
 			}
+			$closureBindScopeClassReflection = $this->getClosureBindScopeClassReflection();
+			if ($closureBindScopeClassReflection !== null) {
+				return new StaticType($closureBindScopeClassReflection);
+			}
 			if ($this->isInClass()) {
-				if ($this->inClosureBindScopeClasses !== [] && $this->inClosureBindScopeClasses !== ['static']) {
-					if ($this->reflectionProvider->hasClass($this->inClosureBindScopeClasses[0])) {
-						return new StaticType($this->reflectionProvider->getClass($this->inClosureBindScopeClasses[0]));
-					}
-				}
-
 				return new StaticType($this->getClassReflection());
 			}
 		}
@@ -1838,14 +1840,18 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 		if ($bindScopeClassReflection !== null && $this->reflectionProvider->hasClass($originalClass)) {
 			return new ObjectType($originalClass);
 		}
-		if ($this->isInClass()) {
-			if ($this->inClosureBindScopeClasses === [$originalClass]) {
-				if ($this->reflectionProvider->hasClass($originalClass)) {
-					return new ThisType($this->reflectionProvider->getClass($originalClass));
-				}
-				return new ObjectType($originalClass);
+		// outside a class only self/parent/static follow the Closure::bind() scope;
+		// inside one any name of the bound class does, as before
+		if (
+			$this->inClosureBindScopeClasses === [$originalClass]
+			&& ($this->isInClass() || $name->isSpecialClassName())
+		) {
+			if ($this->reflectionProvider->hasClass($originalClass)) {
+				return new ThisType($this->reflectionProvider->getClass($originalClass));
 			}
-
+			return new ObjectType($originalClass);
+		}
+		if ($this->isInClass()) {
 			$thisType = new ThisType($this->getClassReflection());
 			$ancestor = $thisType->getAncestorWithClassName($originalClass);
 			if ($ancestor !== null) {
@@ -1854,6 +1860,36 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 		}
 
 		return new ObjectType($originalClass);
+	}
+
+	/**
+	 * The class a `Closure::bind()` / `Closure::call()` scoped this scope to, as
+	 * self/parent/static see it: null when the scope is not bound to a class (unbound,
+	 * or bound to the default "static" scope outside a class). Holds inside and outside
+	 * of a class; entering a class-like resets it.
+	 *
+	 * @return non-empty-string|null
+	 */
+	private function getClosureBindScopeClassName(): ?string
+	{
+		if ($this->inClosureBindScopeClasses === [] || $this->inClosureBindScopeClasses === ['static']) {
+			return null;
+		}
+
+		return $this->inClosureBindScopeClasses[0];
+	}
+
+	/**
+	 * The reflection of {@see getClosureBindScopeClassName()}, null also when the class is unknown.
+	 */
+	public function getClosureBindScopeClassReflection(): ?ClassReflection
+	{
+		$className = $this->getClosureBindScopeClassName();
+		if ($className === null || !$this->reflectionProvider->hasClass($className)) {
+			return null;
+		}
+
+		return $this->reflectionProvider->getClass($className);
 	}
 
 	/**

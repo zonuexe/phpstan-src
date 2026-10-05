@@ -57,6 +57,16 @@ assertType('int', Closure::bind(static fn () => self::$staticProp, null, Foo::cl
 assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new self(), null, Foo::class)());
 assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new parent(), null, Bar::class)());
 
+// The bound class is the one the call site evaluated, so an object newScope works too.
+function objectScope(Foo $foo, Bar $bar): void
+{
+	assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new self(), null, $foo)());
+	assertType('static(ClosureBindScope\Foo)', Closure::bind(static fn () => new static(), null, $foo)());
+	assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new parent(), null, $bar)());
+	assertType("'Foo'", Closure::bind(static fn () => self::staticMethod(), null, $foo)());
+	assertType("'Bar'", Closure::bind(static fn () => self::staticMethod(), null, $bar)());
+}
+
 class Container
 {
 
@@ -67,6 +77,9 @@ class Container
 		assertType("'Foo'", Closure::bind(static fn () => self::A, null, Foo::class)());
 		assertType("'Bar'", Closure::bind(static fn () => self::A, null, Bar::class)());
 		assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new self(), null, Foo::class)());
+		// parent is the bound class's parent, not the enclosing class's
+		assertType("'Foo'", Closure::bind(static fn () => parent::staticMethod(), null, Bar::class)());
+		assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new parent(), null, Bar::class)());
 	}
 
 }

@@ -381,6 +381,7 @@ static void ZEND_FASTCALL msWithoutMemoizedTypes(INTERNAL_FUNCTION_PARAMETERS);
 static void ZEND_FASTCALL msGetNativeType(INTERNAL_FUNCTION_PARAMETERS);
 static void ZEND_FASTCALL msDoNotTreatPhpDocTypesAsCertain(INTERNAL_FUNCTION_PARAMETERS);
 static void ZEND_FASTCALL msResolveName(INTERNAL_FUNCTION_PARAMETERS);
+static void ZEND_FASTCALL msGetClosureBindScopeClassReflection(INTERNAL_FUNCTION_PARAMETERS);
 static void ZEND_FASTCALL msResolveTypeByName(INTERNAL_FUNCTION_PARAMETERS);
 static void ZEND_FASTCALL msGetParentScope(INTERNAL_FUNCTION_PARAMETERS);
 static void ZEND_FASTCALL msPushInFunctionCall(INTERNAL_FUNCTION_PARAMETERS);
@@ -720,6 +721,7 @@ public:
 		return thisCall(PT_LC("getparentscope"), msGetParentScope, 0, NULL, [&]() { return getParentScope(); });
 	}
 	zv::Val thisDoNotTreatPhpDocTypesAsCertain() { return thisCall(PT_LC("donottreatphpdoctypesascertain"), msDoNotTreatPhpDocTypesAsCertain, 0, NULL, [&]() { return doNotTreatPhpDocTypesAsCertain(); }); }
+	zv::Val thisGetClosureBindScopeClassReflection() { return thisCall(PT_LC("getclosurebindscopeclassreflection"), msGetClosureBindScopeClassReflection, 0, NULL, [&]() { return getClosureBindScopeClassReflection(); }); }
 	zv::Val thisResolveName(zval *name) { return thisCall(PT_LC("resolvename"), msResolveName, 1, name, [&]() { return resolveName(Z_OBJ_P(name)); }); }
 	zv::Val thisResolveTypeByName(zval *name) { return thisCall(PT_LC("resolvetypebyname"), msResolveTypeByName, 1, name, [&]() { return resolveTypeByName(Z_OBJ_P(name)); }); }
 	zv::Val thisGetPhpVersion() { return thisCall(PT_LC("getphpversion"), msGetPhpVersion, 0, NULL, [&]() { return getPhpVersion(); }); }
@@ -3458,26 +3460,32 @@ public:
 			}
 		}
 
-		bool inClass;
-		if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
-		if (inClass) {
-			if (zend_string_equals_literal(lowerClass.get(), "self") || zend_string_equals_literal(lowerClass.get(), "static")) {
-				if (UNEXPECTED(!requireSlot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES, "inClosureBindScopeClasses"))) return zv::Val();
-				HashTable *bindScopeClasses = Z_ARRVAL_P(slot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES).raw());
-				if (zend_hash_num_elements(bindScopeClasses) != 0 && !isSingleStringList(bindScopeClasses, PT_LC("static"))) {
-					zend_string *first = firstBindScopeClass(bindScopeClasses, "resolveName");
-					if (UNEXPECTED(first == NULL)) return zv::Val();
-					return zv::Val::string(first);
-				}
+		zv::Val closureBindScopeClassName = getClosureBindScopeClassName();
+		if (UNEXPECTED(closureBindScopeClassName.isUndef())) return zv::Val();
+		if (zend_string_equals_literal(lowerClass.get(), "self") || zend_string_equals_literal(lowerClass.get(), "static")) {
+			if (!closureBindScopeClassName.isNull()) return closureBindScopeClassName;
+			bool inClass;
+			if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
+			if (inClass) {
 				zv::Val classReflection = thisGetClassReflection();
 				if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
 				zend_object *reflection = requireObject(classReflection, "getName");
 				if (UNEXPECTED(reflection == NULL)) return zv::Val();
 				return pt_class_reflection_get_name(reflection);
-			} else if (zend_string_equals_literal(lowerClass.get(), "parent")) {
-				zv::Val classReflection = thisGetClassReflection();
-				if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
-				zend_object *reflection = requireObject(classReflection, "getParentClass");
+			}
+		} else if (zend_string_equals_literal(lowerClass.get(), "parent")) {
+			zv::Val currentClassReflection = thisGetClosureBindScopeClassReflection();
+			if (UNEXPECTED(currentClassReflection.isUndef())) return zv::Val();
+			if (currentClassReflection.isNull() && closureBindScopeClassName.isNull()) {
+				bool inClass;
+				if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
+				if (inClass) {
+					currentClassReflection = thisGetClassReflection();
+					if (UNEXPECTED(currentClassReflection.isUndef())) return zv::Val();
+				}
+			}
+			if (!currentClassReflection.isNull()) {
+				zend_object *reflection = requireObject(currentClassReflection, "getParentClass");
 				if (UNEXPECTED(reflection == NULL)) return zv::Val();
 				zv::Val parentClass = pt_type_call(reflection, PT_LC("getparentclass"), 0, NULL);
 				if (UNEXPECTED(parentClass.isUndef())) return zv::Val();
@@ -3508,31 +3516,14 @@ public:
 			if (!bindScopeClassReflection.isNull()) {
 				return newStaticType(bindScopeClassReflection, "StaticType");
 			}
+			zv::Val closureBindScopeClassReflection = thisGetClosureBindScopeClassReflection();
+			if (UNEXPECTED(closureBindScopeClassReflection.isUndef())) return zv::Val();
+			if (!closureBindScopeClassReflection.isNull()) {
+				return newStaticType(closureBindScopeClassReflection, "StaticType");
+			}
 			bool inClass;
 			if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
 			if (inClass) {
-				if (UNEXPECTED(!requireSlot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES, "inClosureBindScopeClasses"))) return zv::Val();
-				HashTable *bindScopeClasses = Z_ARRVAL_P(slot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES).raw());
-				if (zend_hash_num_elements(bindScopeClasses) != 0 && !isSingleStringList(bindScopeClasses, PT_LC("static"))) {
-					zval *first = zend_hash_index_find(bindScopeClasses, 0);
-					zval nullZv;
-					ZVAL_NULL(&nullZv);
-					if (first == NULL) {
-						zend_error(E_WARNING, "Undefined array key 0");
-						if (UNEXPECTED(EG(exception))) return zv::Val();
-						first = &nullZv;
-					}
-					zv::Ref provider = slot(PT_MS_PROP_REFLECTION_PROVIDER);
-					if (UNEXPECTED(!provider.isObject())) return uninitializedProperty("reflectionProvider");
-					bool hasClass;
-					if (UNEXPECTED(!pt_reflection_provider_has_class(provider.asObject(), first, hasClass))) return zv::Val();
-					if (hasClass) {
-						zv::Val classReflection = pt_reflection_provider_get_class(provider.asObject(), first);
-						if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
-						return newStaticType(classReflection, "StaticType");
-					}
-				}
-
 				zv::Val classReflection = thisGetClassReflection();
 				if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
 				return newStaticType(classReflection, "StaticType");
@@ -3554,12 +3545,24 @@ public:
 			if (UNEXPECTED(!pt_reflection_provider_has_class(provider.asObject(), originalClass.raw(), hasClass))) return zv::Val();
 			if (hasClass) return pt_type_new_object_type(originalClass.raw());
 		}
+		// outside a class only self/parent/static follow the Closure::bind() scope;
+		// inside one any name of the bound class does, as before
+		if (UNEXPECTED(!requireSlot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES, "inClosureBindScopeClasses"))) return zv::Val();
+		HashTable *bindScopeClasses = Z_ARRVAL_P(slot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES).raw());
 		bool inClass;
-		if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
-		if (inClass) {
-			if (UNEXPECTED(!requireSlot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES, "inClosureBindScopeClasses"))) return zv::Val();
-			HashTable *bindScopeClasses = Z_ARRVAL_P(slot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES).raw());
-			if (isSingleStringList(bindScopeClasses, ZSTR_VAL(Z_STR_P(originalClass.raw())), ZSTR_LEN(Z_STR_P(originalClass.raw())))) {
+		if (isSingleStringList(bindScopeClasses, ZSTR_VAL(Z_STR_P(originalClass.raw())), ZSTR_LEN(Z_STR_P(originalClass.raw())))) {
+			if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
+			bool followsBindScope = inClass;
+			if (!followsBindScope) {
+				/* $name->isSpecialClassName() */
+				zv::Val lowerName = pt_name_node_to_lower_string(&nameZv);
+				if (UNEXPECTED(lowerName.isUndef())) return zv::Val();
+				followsBindScope = Z_TYPE_P(lowerName.raw()) == IS_STRING
+					&& (zend_string_equals_literal(Z_STR_P(lowerName.raw()), "self")
+						|| zend_string_equals_literal(Z_STR_P(lowerName.raw()), "parent")
+						|| zend_string_equals_literal(Z_STR_P(lowerName.raw()), "static"));
+			}
+			if (followsBindScope) {
 				zv::Ref provider = slot(PT_MS_PROP_REFLECTION_PROVIDER);
 				if (UNEXPECTED(!provider.isObject())) return uninitializedProperty("reflectionProvider");
 				bool hasClass;
@@ -3571,7 +3574,9 @@ public:
 				}
 				return pt_type_new_object_type(originalClass.raw());
 			}
-
+		}
+		if (UNEXPECTED(!thisIsInClass(inClass))) return zv::Val();
+		if (inClass) {
 			zv::Val classReflection = thisGetClassReflection();
 			if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
 			zv::Val thisType = newThisType(classReflection);
@@ -3582,6 +3587,33 @@ public:
 		}
 
 		return pt_type_new_object_type(originalClass.raw());
+	}
+
+	/* Mirrors getClosureBindScopeClassName(): $this->inClosureBindScopeClasses[0]
+	 * unless the list is empty or ['static']; IS_NULL for null, UNDEF = pending
+	 * exception */
+	zv::Val getClosureBindScopeClassName()
+	{
+		if (UNEXPECTED(!requireSlot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES, "inClosureBindScopeClasses"))) return zv::Val();
+		HashTable *bindScopeClasses = Z_ARRVAL_P(slot(PT_MS_PROP_IN_CLOSURE_BIND_SCOPE_CLASSES).raw());
+		if (zend_hash_num_elements(bindScopeClasses) == 0 || isSingleStringList(bindScopeClasses, PT_LC("static"))) return zv::Val::null();
+		zend_string *first = firstBindScopeClass(bindScopeClasses, "getClosureBindScopeClassName");
+		if (UNEXPECTED(first == NULL)) return zv::Val();
+		return zv::Val::string(first);
+	}
+
+	/* Mirrors getClosureBindScopeClassReflection(); IS_NULL for null, UNDEF =
+	 * pending exception */
+	zv::Val getClosureBindScopeClassReflection()
+	{
+		zv::Val className = getClosureBindScopeClassName();
+		if (className.isUndef() || className.isNull()) return className;
+		zv::Ref provider = slot(PT_MS_PROP_REFLECTION_PROVIDER);
+		if (UNEXPECTED(!provider.isObject())) return uninitializedProperty("reflectionProvider");
+		bool hasClass;
+		if (UNEXPECTED(!pt_reflection_provider_has_class(provider.asObject(), className.raw(), hasClass))) return zv::Val();
+		if (!hasClass) return zv::Val::null();
+		return pt_reflection_provider_get_class(provider.asObject(), className.raw());
 	}
 
 	/* Mirrors resolveClosureBindScopeClass(): the class a self/parent/static
@@ -11581,6 +11613,12 @@ static void ZEND_FASTCALL msResolveName(INTERNAL_FUNCTION_PARAMETERS)
 	PT_RETURN_VAL(PT_THIS.resolveName(Z_OBJ_P(name)));
 }
 
+static void ZEND_FASTCALL msGetClosureBindScopeClassReflection(INTERNAL_FUNCTION_PARAMETERS)
+{
+	ZEND_PARSE_PARAMETERS_NONE();
+	PT_RETURN_VAL(PT_THIS.getClosureBindScopeClassReflection());
+}
+
 static void ZEND_FASTCALL msResolveTypeByName(INTERNAL_FUNCTION_PARAMETERS)
 {
 	PT_MS_PARSE_NAME(name);
@@ -12442,6 +12480,12 @@ zv::Val pt_mutating_scope_resolve_name(zend_object *scope, zend_object *name)
 	return pt_type_call(scope, PT_LC("resolvename"), 1, &nameZv);
 }
 
+zv::Val pt_mutating_scope_get_closure_bind_scope_class_reflection(zend_object *scope)
+{
+	if (PT_MS_NATIVE(scope, PT_LC("getclosurebindscopeclassreflection"), msGetClosureBindScopeClassReflection)) return MutatingScope(scope).getClosureBindScopeClassReflection();
+	return pt_type_call(scope, PT_LC("getclosurebindscopeclassreflection"), 0, NULL);
+}
+
 zv::Val pt_mutating_scope_enter_closure_bind(zend_object *scope, zval *thisType, zval *nativeThisType, zval *scopeClasses)
 {
 	zval nullZv;
@@ -12836,6 +12880,7 @@ PT_MINIT_REGISTRATION(pt_register_mutating_scope)
 
 	cls.method(sigs::doNotTreatPhpDocTypesAsCertain, msDoNotTreatPhpDocTypesAsCertain);
 	cls.method(sigs::resolveName, msResolveName);
+	cls.method(sigs::getClosureBindScopeClassReflection, msGetClosureBindScopeClassReflection);
 	cls.method(sigs::resolveTypeByName, msResolveTypeByName);
 
 	cls.method<&MutatingScope::getTypeFromValue, zp::Zval>(sigs::getTypeFromValue);

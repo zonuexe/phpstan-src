@@ -2117,6 +2117,7 @@ zv::Val pt_mutating_scope_get_state_type(zend_object *scope, zend_object *expr);
 zv::Val pt_mutating_scope_get_conditional_expressions(zend_object *scope);
 zv::Val pt_mutating_scope_get_current_expression_result_storage(zend_object *scope);
 zv::Val pt_mutating_scope_resolve_type_by_name(zend_object *scope, zend_object *name);
+zv::Val pt_mutating_scope_get_closure_bind_scope_class_reflection(zend_object *scope);
 zv::Val pt_mutating_scope_specify_types_of_new_world_handler_node(zend_object *scope, zend_object *node, zval *context);
 
 /* ClosureBindScopeResolver.cpp — $resolver->resolveScopeClass($scope,
