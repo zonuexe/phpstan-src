@@ -2,7 +2,6 @@
 
 namespace PHPStan\Rules\Classes;
 
-use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Classes\ForbiddenClassNameExtension;
 use PHPStan\Rules\ClassCaseSensitivityCheck;
 use PHPStan\Rules\ClassForbiddenNameCheck;
@@ -67,7 +66,6 @@ class InstantiationRuleTest extends RuleTestCase
 			),
 			$ruleLevelHelper,
 			new ConsistentConstructorHelper(),
-			new ClosureBindScopeResolver($reflectionProvider),
 			newOnNonObject: true,
 			discoveringSymbolsTip: true,
 		);
@@ -808,6 +806,36 @@ class InstantiationRuleTest extends RuleTestCase
 			[
 				'Parameter #1 $value of class Bug4548\\Suit constructor expects 1|2|3|4, 5 given.',
 				26,
+			],
+		]);
+	}
+
+	public function testClosureBindScope(): void
+	{
+		$this->analyse([__DIR__ . '/data/closure-bind-scope.php'], [
+			[
+				'Using new parent but ClosureBindScopeClasses\\NoParent does not extend any class.',
+				50,
+			],
+			[
+				'Using self outside of class scope.',
+				57,
+			],
+			[
+				'Using parent outside of class scope.',
+				57,
+			],
+			[
+				'Using static outside of class scope.',
+				57,
+			],
+			[
+				'Using self outside of class scope.',
+				58,
+			],
+			[
+				'Using new parent but ClosureBindScopeClasses\\NoParent does not extend any class.',
+				75,
 			],
 		]);
 	}

@@ -2,7 +2,6 @@
 
 namespace PHPStan\Rules\Properties;
 
-use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Classes\ForbiddenClassNameExtension;
 use PHPStan\Php\PhpVersion;
 use PHPStan\Rules\ClassCaseSensitivityCheck;
@@ -47,7 +46,6 @@ class AccessStaticPropertiesInAssignRuleTest extends RuleTestCase
 				),
 				new PhpVersion(PHP_VERSION_ID),
 				new NonStringableDynamicAccessCheck($ruleLevelHelper, true),
-				new ClosureBindScopeResolver($reflectionProvider),
 				discoveringSymbolsTip: true,
 			),
 		);
@@ -107,6 +105,24 @@ class AccessStaticPropertiesInAssignRuleTest extends RuleTestCase
 			[
 				'Access to protected(set) property $bar of class StaticPropertiesAsymmetricVisibility\Foo.',
 				33,
+			],
+		]);
+	}
+
+	public function testClosureBindScope(): void
+	{
+		$this->analyse([__DIR__ . '/data/closure-bind-scope.php'], [
+			[
+				'Access to private static property $pp of parent class ClosureBindScopeProperties\\Foo.',
+				50,
+			],
+			[
+				'Accessing parent::$y but ClosureBindScopeProperties\\NoParent does not extend any class.',
+				56,
+			],
+			[
+				'Accessing self::$sp outside of class scope.',
+				65,
 			],
 		]);
 	}

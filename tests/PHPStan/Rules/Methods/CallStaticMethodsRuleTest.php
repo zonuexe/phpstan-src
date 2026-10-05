@@ -2,7 +2,6 @@
 
 namespace PHPStan\Rules\Methods;
 
-use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Classes\ForbiddenClassNameExtension;
 use PHPStan\Rules\ClassCaseSensitivityCheck;
 use PHPStan\Rules\ClassForbiddenNameCheck;
@@ -63,7 +62,6 @@ class CallStaticMethodsRuleTest extends RuleTestCase
 					$reflectionProvider,
 					$container->getExtensionsCollection(RestrictedClassNameUsageExtension::class),
 				),
-				new ClosureBindScopeResolver($reflectionProvider),
 				checkFunctionNameCase: true,
 				discoveringSymbolsTip: true,
 				reportMagicMethods: true,
@@ -1130,6 +1128,46 @@ class CallStaticMethodsRuleTest extends RuleTestCase
 			[
 				'Static method Bug15251\\A::sfoo() invoked with 0 parameters, at least 1 required.',
 				42,
+			],
+		]);
+	}
+
+	#[RequiresPhp('>= 8.1.0')]
+	public function testClosureBindScope(): void
+	{
+		$this->checkThisOnly = false;
+		$this->analyse([__DIR__ . '/data/closure-bind-scope.php'], [
+			[
+				'Call to private static method psm() of class ClosureBindScopeMethods\\Foo.',
+				48,
+			],
+			[
+				'Calling parent::s() but ClosureBindScopeMethods\\NoParent does not extend any class.',
+				51,
+			],
+			[
+				'Call to an undefined static method ClosureBindScopeMethods\\Foo::nope().',
+				54,
+			],
+			[
+				'Calling self::sm() outside of class scope.',
+				57,
+			],
+			[
+				'Calling parent::sm() outside of class scope.',
+				57,
+			],
+			[
+				'Calling static::sm() outside of class scope.',
+				57,
+			],
+			[
+				'Call to an undefined static method ClosureBindScopeMethods\\Foo::own().',
+				71,
+			],
+			[
+				'Calling parent::s() but ClosureBindScopeMethods\\NoParent does not extend any class.',
+				75,
 			],
 		]);
 	}

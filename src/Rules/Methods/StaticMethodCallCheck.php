@@ -6,7 +6,6 @@ use DOMDocument;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
-use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Analyser\NullsafeOperatorHelper;
 use PHPStan\Analyser\Scope;
 use PHPStan\DependencyInjection\AutowiredParameter;
@@ -23,6 +22,7 @@ use PHPStan\Rules\ClassNameUsageLocation;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Rules\RuleLevelHelper;
+use PHPStan\Rules\SelfClassResolver;
 use PHPStan\ShouldNotHappenException;
 use PHPStan\TrinaryLogic;
 use PHPStan\Type\ErrorType;
@@ -45,7 +45,6 @@ final class StaticMethodCallCheck
 		private ReflectionProvider $reflectionProvider,
 		private RuleLevelHelper $ruleLevelHelper,
 		private ClassNameCheck $classCheck,
-		private ClosureBindScopeResolver $closureBindScopeResolver,
 		#[AutowiredParameter]
 		private bool $checkFunctionNameCase,
 		#[AutowiredParameter(ref: '%tips.discoveringSymbols%')]
@@ -77,9 +76,9 @@ final class StaticMethodCallCheck
 
 			$className = (string) $class;
 			$lowercasedClassName = strtolower($className);
-			$bindScopeClassReflection = $this->closureBindScopeResolver->resolveScopeClass($scope, $class);
+			$selfClassReflection = SelfClassResolver::resolve($scope, $this->reflectionProvider);
 			if (in_array($lowercasedClassName, ['self', 'static'], true)) {
-				if ($bindScopeClassReflection === null && !$scope->isInClass()) {
+				if ($selfClassReflection === null) {
 					return [
 						[
 							RuleErrorBuilder::message(sprintf(
@@ -95,60 +94,47 @@ final class StaticMethodCallCheck
 				}
 				$classType = $scope->resolveTypeByName($class);
 			} elseif ($lowercasedClassName === 'parent') {
-				if ($bindScopeClassReflection !== null) {
-					if ($bindScopeClassReflection->getParentClass() === null) {
-						return [
-							[
-								RuleErrorBuilder::message(sprintf(
-									'Calling parent::%s() but %s does not extend any class.',
-									$methodName,
-									$bindScopeClassReflection->getDisplayName(),
-								))
-									->line($astName->getStartLine())
-									->identifier('class.noParent')
-									->build(),
-							],
-							null,
-						];
-					}
-				} else {
-					if (!$scope->isInClass()) {
-						return [
-							[
-								RuleErrorBuilder::message(sprintf(
-									'Calling %s::%s() outside of class scope.',
-									$className,
-									$methodName,
-								))
-									->line($astName->getStartLine())
-									->identifier(sprintf('outOfClass.parent'))
-									->build(),
-							],
-							null,
-						];
-					}
-					$currentClassReflection = $scope->getClassReflection();
-					if ($currentClassReflection->getParentClass() === null) {
-						return [
-							[
-								RuleErrorBuilder::message(sprintf(
-									'%s::%s() calls parent::%s() but %s does not extend any class.',
-									$scope->getClassReflection()->getDisplayName(),
-									$scope->getFunctionName(),
-									$methodName,
-									$scope->getClassReflection()->getDisplayName(),
-								))
-									->line($astName->getStartLine())
-									->identifier('class.noParent')
-									->build(),
-							],
-							null,
-						];
-					}
+				if ($selfClassReflection === null) {
+					return [
+						[
+							RuleErrorBuilder::message(sprintf(
+								'Calling %s::%s() outside of class scope.',
+								$className,
+								$methodName,
+							))
+								->line($astName->getStartLine())
+								->identifier(sprintf('outOfClass.parent'))
+								->build(),
+						],
+						null,
+					];
+				}
+				// a closure bound to another class has no method of that class to name
+				$isEnclosingClass = $scope->isInClass() && $scope->getClassReflection()->getName() === $selfClassReflection->getName();
+				if ($selfClassReflection->getParentClass() === null) {
+					return [
+						[
+							RuleErrorBuilder::message($isEnclosingClass ? sprintf(
+								'%s::%s() calls parent::%s() but %s does not extend any class.',
+								$selfClassReflection->getDisplayName(),
+								$scope->getFunctionName(),
+								$methodName,
+								$selfClassReflection->getDisplayName(),
+							) : sprintf(
+								'Calling parent::%s() but %s does not extend any class.',
+								$methodName,
+								$selfClassReflection->getDisplayName(),
+							))
+								->line($astName->getStartLine())
+								->identifier('class.noParent')
+								->build(),
+						],
+						null,
+					];
+				}
 
-					if ($scope->getFunctionName() === null) {
-						throw new ShouldNotHappenException();
-					}
+				if ($isEnclosingClass && $scope->getFunctionName() === null) {
+					throw new ShouldNotHappenException();
 				}
 
 				$classType = $scope->resolveTypeByName($class);

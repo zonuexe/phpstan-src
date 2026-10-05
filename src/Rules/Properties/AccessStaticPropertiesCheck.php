@@ -11,7 +11,6 @@ use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\String_;
-use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Analyser\NullsafeOperatorHelper;
 use PHPStan\Analyser\Scope;
 use PHPStan\DependencyInjection\AutowiredParameter;
@@ -26,6 +25,7 @@ use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\NonStringableDynamicAccessCheck;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Rules\RuleLevelHelper;
+use PHPStan\Rules\SelfClassResolver;
 use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\ErrorType;
 use PHPStan\Type\StringType;
@@ -51,7 +51,6 @@ final class AccessStaticPropertiesCheck
 		private ClassNameCheck $classCheck,
 		private PhpVersion $phpVersion,
 		private NonStringableDynamicAccessCheck $nonStringableDynamicAccessCheck,
-		private ClosureBindScopeResolver $closureBindScopeResolver,
 		#[AutowiredParameter(ref: '%tips.discoveringSymbols%')]
 		private bool $discoveringSymbolsTip,
 	)
@@ -96,9 +95,9 @@ final class AccessStaticPropertiesCheck
 		if ($node->class instanceof Name) {
 			$class = (string) $node->class;
 			$lowercasedClass = strtolower($class);
-			$bindScopeClassReflection = $this->closureBindScopeResolver->resolveScopeClass($scope, $node->class);
+			$selfClassReflection = SelfClassResolver::resolve($scope, $this->reflectionProvider);
 			if (in_array($lowercasedClass, ['self', 'static'], true)) {
-				if ($bindScopeClassReflection === null && !$scope->isInClass()) {
+				if ($selfClassReflection === null) {
 					return [
 						RuleErrorBuilder::message(sprintf(
 							'Accessing %s::$%s outside of class scope.',
@@ -112,46 +111,37 @@ final class AccessStaticPropertiesCheck
 				}
 				$classType = $scope->resolveTypeByName($node->class);
 			} elseif ($lowercasedClass === 'parent') {
-				if ($bindScopeClassReflection !== null) {
-					if ($bindScopeClassReflection->getParentClass() === null) {
-						return [
-							RuleErrorBuilder::message(sprintf(
-								'Accessing parent::$%s but %s does not extend any class.',
-								$name,
-								$bindScopeClassReflection->getDisplayName(),
-							))
-								->line($node->name->getStartLine())
-								->identifier('class.noParent')
-								->build(),
-						];
-					}
-				} else {
-					if (!$scope->isInClass()) {
-						return [
-							RuleErrorBuilder::message(sprintf(
-								'Accessing %s::$%s outside of class scope.',
-								$class,
-								$name,
-							))
-								->line($node->name->getStartLine())
-								->identifier('outOfClass.parent')
-								->build(),
-						];
-					}
-					if ($scope->getClassReflection()->getParentClass() === null) {
-						return [
-							RuleErrorBuilder::message(sprintf(
-								'%s::%s() accesses parent::$%s but %s does not extend any class.',
-								$scope->getClassReflection()->getDisplayName(),
-								$scope->getFunctionName(),
-								$name,
-								$scope->getClassReflection()->getDisplayName(),
-							))
-								->line($node->name->getStartLine())
-								->identifier('class.noParent')
-								->build(),
-						];
-					}
+				if ($selfClassReflection === null) {
+					return [
+						RuleErrorBuilder::message(sprintf(
+							'Accessing %s::$%s outside of class scope.',
+							$class,
+							$name,
+						))
+							->line($node->name->getStartLine())
+							->identifier('outOfClass.parent')
+							->build(),
+					];
+				}
+				if ($selfClassReflection->getParentClass() === null) {
+					// a closure bound to another class has no method of that class to name
+					$isEnclosingClass = $scope->isInClass() && $scope->getClassReflection()->getName() === $selfClassReflection->getName();
+					return [
+						RuleErrorBuilder::message($isEnclosingClass ? sprintf(
+							'%s::%s() accesses parent::$%s but %s does not extend any class.',
+							$selfClassReflection->getDisplayName(),
+							$scope->getFunctionName(),
+							$name,
+							$selfClassReflection->getDisplayName(),
+						) : sprintf(
+							'Accessing parent::$%s but %s does not extend any class.',
+							$name,
+							$selfClassReflection->getDisplayName(),
+						))
+							->line($node->name->getStartLine())
+							->identifier('class.noParent')
+							->build(),
+					];
 				}
 
 				$classType = $scope->resolveTypeByName($node->class);

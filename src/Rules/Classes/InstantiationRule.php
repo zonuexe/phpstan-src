@@ -4,7 +4,6 @@ namespace PHPStan\Rules\Classes;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
-use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Analyser\CollectedDataEmitter;
 use PHPStan\Analyser\NodeCallbackInvoker;
 use PHPStan\Analyser\Scope;
@@ -28,6 +27,7 @@ use PHPStan\Rules\RestrictedUsage\RewrittenDeclaringClassMethodReflection;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Rules\RuleLevelHelper;
+use PHPStan\Rules\SelfClassResolver;
 use PHPStan\ShouldNotHappenException;
 use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\ErrorType;
@@ -41,6 +41,7 @@ use function array_filter;
 use function array_map;
 use function array_merge;
 use function count;
+use function in_array;
 use function sprintf;
 use function strtolower;
 
@@ -62,7 +63,6 @@ final class InstantiationRule implements Rule
 		private ClassNameCheck $classCheck,
 		private RuleLevelHelper $ruleLevelHelper,
 		private ConsistentConstructorHelper $consistentConstructorHelper,
-		private ClosureBindScopeResolver $closureBindScopeResolver,
 		#[AutowiredParameter(ref: '%featureToggles.newOnNonObject%')]
 		private bool $newOnNonObject,
 		#[AutowiredParameter(ref: '%tips.discoveringSymbols%')]
@@ -132,15 +132,11 @@ final class InstantiationRule implements Rule
 		$lowercasedClass = strtolower($class);
 		$messages = [];
 		$isStatic = false;
-		$bindScopeClassReflection = $node->class instanceof Node\Name
-			? $this->closureBindScopeResolver->resolveScopeClass($scope, $node->class)
+		$selfClassReflection = in_array($lowercasedClass, ['self', 'static', 'parent'], true)
+			? SelfClassResolver::resolve($scope, $this->reflectionProvider)
 			: null;
 		if ($lowercasedClass === 'static') {
-			if ($bindScopeClassReflection !== null) {
-				$classReflection = $bindScopeClassReflection;
-			} elseif ($scope->isInClass()) {
-				$classReflection = $scope->getClassReflection();
-			} else {
+			if ($selfClassReflection === null) {
 				return [
 					RuleErrorBuilder::message(sprintf('Using %s outside of class scope.', $class))
 						->identifier('outOfClass.static')
@@ -149,6 +145,7 @@ final class InstantiationRule implements Rule
 			}
 
 			$isStatic = true;
+			$classReflection = $selfClassReflection;
 			if (!$classReflection->isFinal()) {
 				if (!$classReflection->hasConstructor()) {
 					return [];
@@ -166,48 +163,39 @@ final class InstantiationRule implements Rule
 				}
 			}
 		} elseif ($lowercasedClass === 'self') {
-			if ($bindScopeClassReflection !== null) {
-				$classReflection = $bindScopeClassReflection;
-			} elseif ($scope->isInClass()) {
-				$classReflection = $scope->getClassReflection();
-			} else {
+			if ($selfClassReflection === null) {
 				return [
 					RuleErrorBuilder::message(sprintf('Using %s outside of class scope.', $class))
 						->identifier('outOfClass.self')
 						->build(),
 				];
 			}
+			$classReflection = $selfClassReflection;
 		} elseif ($lowercasedClass === 'parent') {
-			if ($bindScopeClassReflection !== null) {
-				if ($bindScopeClassReflection->getParentClass() === null) {
-					return [
-						RuleErrorBuilder::message(sprintf(
-							'Using new parent but %s does not extend any class.',
-							$bindScopeClassReflection->getDisplayName(),
-						))->identifier('class.noParent')->build(),
-					];
-				}
-				$classReflection = $bindScopeClassReflection->getParentClass();
-			} else {
-				if (!$scope->isInClass()) {
-					return [
-						RuleErrorBuilder::message(sprintf('Using %s outside of class scope.', $class))
-							->identifier('outOfClass.parent')
-							->build(),
-					];
-				}
-				if ($scope->getClassReflection()->getParentClass() === null) {
-					return [
-						RuleErrorBuilder::message(sprintf(
-							'%s::%s() calls new parent but %s does not extend any class.',
-							$scope->getClassReflection()->getDisplayName(),
-							$scope->getFunctionName(),
-							$scope->getClassReflection()->getDisplayName(),
-						))->identifier('class.noParent')->build(),
-					];
-				}
-				$classReflection = $scope->getClassReflection()->getParentClass();
+			if ($selfClassReflection === null) {
+				return [
+					RuleErrorBuilder::message(sprintf('Using %s outside of class scope.', $class))
+						->identifier('outOfClass.parent')
+						->build(),
+				];
 			}
+			$parentClassReflection = $selfClassReflection->getParentClass();
+			if ($parentClassReflection === null) {
+				// a closure bound to another class has no method of that class to name
+				$isEnclosingClass = $scope->isInClass() && $scope->getClassReflection()->getName() === $selfClassReflection->getName();
+				return [
+					RuleErrorBuilder::message($isEnclosingClass ? sprintf(
+						'%s::%s() calls new parent but %s does not extend any class.',
+						$selfClassReflection->getDisplayName(),
+						$scope->getFunctionName(),
+						$selfClassReflection->getDisplayName(),
+					) : sprintf(
+						'Using new parent but %s does not extend any class.',
+						$selfClassReflection->getDisplayName(),
+					))->identifier('class.noParent')->build(),
+				];
+			}
+			$classReflection = $parentClassReflection;
 		} else {
 			if (!$this->reflectionProvider->hasClass($class)) {
 				if ($scope->isInClassExists($class)) {

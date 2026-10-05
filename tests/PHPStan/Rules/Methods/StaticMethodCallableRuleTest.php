@@ -2,7 +2,6 @@
 
 namespace PHPStan\Rules\Methods;
 
-use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Classes\ForbiddenClassNameExtension;
 use PHPStan\Rules\ClassCaseSensitivityCheck;
 use PHPStan\Rules\ClassForbiddenNameCheck;
@@ -49,7 +48,6 @@ class StaticMethodCallableRuleTest extends RuleTestCase
 					$reflectionProvider,
 					$container->getExtensionsCollection(RestrictedClassNameUsageExtension::class),
 				),
-				new ClosureBindScopeResolver($reflectionProvider),
 				checkFunctionNameCase: true,
 				discoveringSymbolsTip: true,
 				reportMagicMethods: true,
@@ -135,6 +133,29 @@ class StaticMethodCallableRuleTest extends RuleTestCase
 		}
 
 		$this->analyse([__DIR__ . '/data/static-method-callable-php-versions.php'], $errors);
+	}
+
+	#[RequiresPhp('>= 8.1.0')]
+	public function testClosureBindScope(): void
+	{
+		$this->analyse([__DIR__ . '/data/closure-bind-scope.php'], [
+			[
+				'Call to private static method psm() of class ClosureBindScopeMethods\\Foo.',
+				48,
+			],
+			[
+				'Calling parent::s() but ClosureBindScopeMethods\\NoParent does not extend any class.',
+				51,
+			],
+			[
+				'Call to an undefined static method ClosureBindScopeMethods\\Foo::nope().',
+				54,
+			],
+			[
+				'Calling self::sm() outside of class scope.',
+				57,
+			],
+		]);
 	}
 
 }
