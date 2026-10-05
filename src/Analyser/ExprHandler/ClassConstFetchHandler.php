@@ -7,7 +7,6 @@ use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt;
-use PHPStan\Analyser\ClosureBindScopeResolver;
 use PHPStan\Analyser\ExpressionContext;
 use PHPStan\Analyser\ExpressionResult;
 use PHPStan\Analyser\ExpressionResultFactory;
@@ -41,7 +40,6 @@ final class ClassConstFetchHandler implements ExprHandler
 		private ExpressionResultFactory $expressionResultFactory,
 		private DefaultNarrowingHelper $defaultNarrowingHelper,
 		private ReflectionProvider $reflectionProvider,
-		private ClosureBindScopeResolver $closureBindScopeResolver,
 	)
 	{
 	}
@@ -86,12 +84,10 @@ final class ClassConstFetchHandler implements ExprHandler
 		// the enclosing class is lexical - fixed at this node, identical on every
 		// (possibly narrowed) scope the callback may later be invoked with - so
 		// resolve it once here instead of reading it off the callback's scope.
-		$classReflection = $beforeScope->isInClass() ? $beforeScope->getClassReflection() : null;
-		if ($expr->class instanceof Name) {
-			$bindScopeReflection = $this->closureBindScopeResolver->resolveScopeClass($beforeScope, $expr->class);
-			if ($bindScopeReflection !== null) {
-				$classReflection = $bindScopeReflection;
-			}
+		// Inside a closure scoped by Closure::bind(), self/parent/static name the bound class.
+		$classReflection = $beforeScope->getClosureBindScopeClassReflection();
+		if ($classReflection === null && $beforeScope->isInClass()) {
+			$classReflection = $beforeScope->getClassReflection();
 		}
 
 		$result = $this->expressionResultFactory->create(

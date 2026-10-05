@@ -12,8 +12,8 @@
  * resolver calls it synchronously).
  *
  * NodeScopeResolver, MutatingScope, ExpressionResult, ExpressionContext,
- * VariableFlow, DefaultNarrowingHelper, InitializerExprTypeResolver and
- * ClosureBindScopeResolver are called through their direct entries.
+ * VariableFlow, DefaultNarrowingHelper and InitializerExprTypeResolver are
+ * called through their direct entries.
  */
 
 #include "support.h"
@@ -67,13 +67,12 @@ public:
 	explicit ClassConstFetchHandler(zend_object *self) : self(self) {}
 
 	/* the constructor body: the promoted properties */
-	void construct(zval *initializerExprTypeResolver, zval *expressionResultFactory, zval *defaultNarrowingHelper, zval *reflectionProvider, zval *closureBindScopeResolver) const
+	void construct(zval *initializerExprTypeResolver, zval *expressionResultFactory, zval *defaultNarrowingHelper, zval *reflectionProvider) const
 	{
 		pt_write_slot(self, slots::initializerExprTypeResolver, initializerExprTypeResolver);
 		pt_write_slot(self, slots::expressionResultFactory, expressionResultFactory);
 		pt_write_slot(self, slots::defaultNarrowingHelper, defaultNarrowingHelper);
 		pt_write_slot(self, slots::reflectionProvider, reflectionProvider);
-		pt_write_slot(self, slots::closureBindScopeResolver, closureBindScopeResolver);
 	}
 
 	/* Mirrors supports(); false = pending exception */
@@ -147,21 +146,16 @@ public:
 		}
 
 		// the enclosing class is lexical - fixed at this node - so resolve it
-		// once here instead of reading it off the callback's scope
-		zv::Val classReflection = zv::Val::null();
-		bool inClass;
-		if (UNEXPECTED(!pt_mutating_scope_is_in_class(Z_OBJ_P(beforeScope), inClass))) return zv::Val();
-		if (inClass) {
-			classReflection = pt_mutating_scope_get_class_reflection(Z_OBJ_P(beforeScope));
-			if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
-		}
-		int classIsName = isInstanceOf(class_, PT_CLASS_NAME);
-		if (UNEXPECTED(classIsName < 0)) return zv::Val();
-		if (classIsName) {
-			zv::Val bindScopeReflection = pt_closure_bind_scope_resolver_resolve_scope_class(OBJ_PROP_NUM(self, slots::closureBindScopeResolver), beforeScope, class_);
-			if (UNEXPECTED(bindScopeReflection.isUndef())) return zv::Val();
-			if (!bindScopeReflection.isNull()) {
-				classReflection = std::move(bindScopeReflection);
+		// once here instead of reading it off the callback's scope; inside a
+		// closure scoped by Closure::bind(), self/parent/static name the bound class
+		zv::Val classReflection = pt_mutating_scope_get_closure_bind_scope_class_reflection(Z_OBJ_P(beforeScope));
+		if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
+		if (classReflection.isNull()) {
+			bool inClass;
+			if (UNEXPECTED(!pt_mutating_scope_is_in_class(Z_OBJ_P(beforeScope), inClass))) return zv::Val();
+			if (inClass) {
+				classReflection = pt_mutating_scope_get_class_reflection(Z_OBJ_P(beforeScope));
+				if (UNEXPECTED(classReflection.isUndef())) return zv::Val();
 			}
 		}
 
@@ -392,9 +386,9 @@ PT_MINIT_REGISTRATION(pt_register_class_const_fetch_handler)
 	/* the real parameter class names: the DI container autowires the
 	 * service by reflecting the constructor */
 	cls.method(sigs::__construct, [](INTERNAL_FUNCTION_PARAMETERS) {
-		zval *initializerExprTypeResolver, *expressionResultFactory, *defaultNarrowingHelper, *reflectionProvider, *closureBindScopeResolver;
-		if (!zp::parse<zp::Obj, zp::Obj, zp::Obj, zp::Obj, zp::Obj>(execute_data, initializerExprTypeResolver, expressionResultFactory, defaultNarrowingHelper, reflectionProvider, closureBindScopeResolver)) RETURN_THROWS();
-		ClassConstFetchHandler(Z_OBJ_P(ZEND_THIS)).construct(initializerExprTypeResolver, expressionResultFactory, defaultNarrowingHelper, reflectionProvider, closureBindScopeResolver);
+		zval *initializerExprTypeResolver, *expressionResultFactory, *defaultNarrowingHelper, *reflectionProvider;
+		if (!zp::parse<zp::Obj, zp::Obj, zp::Obj, zp::Obj>(execute_data, initializerExprTypeResolver, expressionResultFactory, defaultNarrowingHelper, reflectionProvider)) RETURN_THROWS();
+		ClassConstFetchHandler(Z_OBJ_P(ZEND_THIS)).construct(initializerExprTypeResolver, expressionResultFactory, defaultNarrowingHelper, reflectionProvider);
 	});
 
 	cls.method<&ClassConstFetchHandler::supports, zp::Obj>(sigs::supports);

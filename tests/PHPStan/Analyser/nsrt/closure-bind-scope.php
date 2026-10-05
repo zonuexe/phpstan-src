@@ -65,6 +65,21 @@ function objectScope(Foo $foo, Bar $bar): void
 	assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new parent(), null, $bar)());
 	assertType("'Foo'", Closure::bind(static fn () => self::staticMethod(), null, $foo)());
 	assertType("'Bar'", Closure::bind(static fn () => self::staticMethod(), null, $bar)());
+	assertType("'Foo'", Closure::bind(static fn () => self::A, null, $foo)());
+	assertType("'Foo'", Closure::bind(static fn () => parent::A, null, $bar)());
+}
+
+// The newScope argument is evaluated where the call is, not inside the closure body.
+/** @param class-string<Bar> $cls */
+function variableScope(string $cls): void
+{
+	assertType("'Bar'", Closure::bind(static function () {
+		return self::A;
+	}, null, $cls)());
+	assertType("'Bar'", Closure::bind(static function () use ($cls) {
+		$cls = Foo::class;
+		return self::A;
+	}, null, $cls)());
 }
 
 class Container
