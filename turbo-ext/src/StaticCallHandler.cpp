@@ -6,9 +6,10 @@
  * arginfo so Nette autowires it. processExpr() is registered as the class's
  * handler entry (Engine.h). The twin's closures are native closures capturing
  * what the PHP closures capture: the Closure::bind() scope factory handed to
- * processArgs() ($expr, $storage; its inner $readArgType closure, created and
- * called only inside it, is inlined), the typeCallback ($this, $beforeScope,
- * $expr, $classResult, $nameResult, $resolvedParametersAcceptor, $argsResult;
+ * processArgs() ($expr, $storage, $parametersAcceptor; its inner $readArgType
+ * closure, created and called only inside it, is inlined), the typeCallback
+ * ($this, $beforeScope, $expr, $classResult, $nameResult,
+ * $resolvedParametersAcceptor, $argsResult;
  * none for the early-terminating `new NeverType(true)` one), the
  * specifyTypesCallback ($this, $beforeScope, $expr, $normalizedExpr,
  * $classResult, $resolvedParametersAcceptor, $argsResult), the

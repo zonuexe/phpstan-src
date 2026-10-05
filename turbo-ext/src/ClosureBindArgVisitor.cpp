@@ -55,8 +55,8 @@ private:
 
 	/*
 	 * foreach ($node->getArgs() as $i => $arg): an unnamed argument by its
-	 * position (0, 1), a named one by its name (closure, newThis); a later
-	 * match replaces an earlier one
+	 * position (0, 1), a named one by its name (closure, newThis); a named
+	 * argument does not replace one already found (`??=`)
 	 */
 	static void findBindArgs(zval *args, BindArgs &out)
 	{
@@ -84,9 +84,9 @@ private:
 			zend_string *argName = visitors::nameString(name, identifierProp);
 			if (argName == NULL) continue;
 			if (zend_string_equals_literal(argName, "closure")) {
-				out.closure = arg;
+				if (out.closure == NULL) out.closure = arg;
 			} else if (zend_string_equals_literal(argName, "newThis")) {
-				out.newThis = arg;
+				if (out.newThis == NULL) out.newThis = arg;
 			}
 		}
 	}

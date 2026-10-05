@@ -39,10 +39,12 @@ final class ClosureBindArgVisitor extends NodeVisitorAbstract
 					continue;
 				}
 
+				// a duplicate named argument does not replace the one already
+				// found, like in ArgumentsNormalizer::reorderArgs()
 				if ($arg->name->toString() === 'closure') {
-					$closureArg = $arg;
+					$closureArg ??= $arg;
 				} elseif ($arg->name->toString() === 'newThis') {
-					$newThisArg = $arg;
+					$newThisArg ??= $arg;
 				}
 			}
 

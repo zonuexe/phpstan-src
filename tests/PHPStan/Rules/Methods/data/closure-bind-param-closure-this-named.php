@@ -19,6 +19,22 @@ class Foo
 		Closure::bind(closure: $c, newThis: new self()); // error
 		Closure::bind(newThis: new self(), closure: $c); // error
 		Closure::bind($c, newThis: new self()); // error
+		Closure::bind(newScope: self::class, newThis: new self(), closure: $c); // error
+		Closure::bind(newThis: new self(), newScope: null, closure: $c); // error
+	}
+
+	/**
+	 * @param-closure-this \stdClass $c
+	 */
+	public function doBar(\Closure $c): void
+	{
+		// $c is the new $this here, not the bound closure
+		Closure::bind(newThis: $c, closure: function (): void {
+
+		}); // ok
+		Closure::bind(newThis: $c, closure: function (): void {
+
+		}, newScope: null); // ok
 	}
 
 }

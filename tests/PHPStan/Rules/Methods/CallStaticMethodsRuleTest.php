@@ -866,6 +866,14 @@ class CallStaticMethodsRuleTest extends RuleTestCase
 				'Parameter $newThis of static method Closure::bind() expects stdClass, ClosureBindParamClosureThisNamed\\Foo given.',
 				21,
 			],
+			[
+				'Parameter $newThis of static method Closure::bind() expects stdClass, ClosureBindParamClosureThisNamed\\Foo given.',
+				22,
+			],
+			[
+				'Parameter $newThis of static method Closure::bind() expects stdClass, ClosureBindParamClosureThisNamed\\Foo given.',
+				23,
+			],
 		]);
 	}
 

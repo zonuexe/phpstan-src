@@ -187,7 +187,12 @@ class ClassConstantRuleTest extends RuleTestCase
 	#[RequiresPhp('>= 8.0.0')]
 	public function testClosureBindNamedArguments(): void
 	{
-		$this->analyse([__DIR__ . '/data/closure-bind-named-arguments.php'], []);
+		$this->analyse([__DIR__ . '/data/closure-bind-named-arguments.php'], [
+			[
+				'Access to protected constant C of class ClosureBindNamedArgumentsConstant\\Target.',
+				53,
+			],
+		]);
 	}
 
 	public function testClassExists(): void
@@ -608,6 +613,12 @@ class ClassConstantRuleTest extends RuleTestCase
 		}
 
 		$this->analyse([__DIR__ . '/data/class-constant-on-expr-php-versions.php'], $errors);
+	}
+
+	#[RequiresPhp('>= 8.0.0')]
+	public function testClosureBindScopeNamedArguments(): void
+	{
+		$this->analyse([__DIR__ . '/data/closure-bind-scope-named-arguments.php'], []);
 	}
 
 	public function testClosureBindScope(): void

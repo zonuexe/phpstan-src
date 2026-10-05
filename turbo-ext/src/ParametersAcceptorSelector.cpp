@@ -2433,10 +2433,10 @@ private:
 	}
 
 	/* the ClosureBindArgVisitor override; false = pending exception */
-	static bool applyClosureBindArg(zv::Val &parametersAcceptors, zval *firstArg, zval *scope)
+	static bool applyClosureBindArg(zv::Val &parametersAcceptors, zval *closureBindArg, zval *scope)
 	{
 		zv::Val valueHold;
-		zval *value = argValueOf(firstArg, valueHold);
+		zval *value = argValueOf(closureBindArg, valueHold);
 		if (UNEXPECTED(value == NULL)) return false;
 		bool isVariable = false;
 		if (UNEXPECTED(!isA(value, PT_CLASS_VARIABLE, isVariable))) return false;
