@@ -27,6 +27,7 @@ use PHPStan\ShouldNotHappenException;
 use PHPStan\TrinaryLogic;
 use PHPStan\Type\ErrorType;
 use PHPStan\Type\Generic\GenericClassStringType;
+use PHPStan\Type\ObjectType;
 use PHPStan\Type\StaticType;
 use PHPStan\Type\StringType;
 use PHPStan\Type\Type;
@@ -273,10 +274,23 @@ final class StaticMethodCallCheck
 					&& $scope->getClassReflection()->is($objectClassName),
 				),
 			);
+			// a closure bound with a $this calls instance methods of that $this's class
+			$boundThisIsMethodClassOrSubClass = TrinaryLogic::createNo();
+			$objectClassNames = $classType->getObjectClassNames();
+			if ($objectClassNames !== [] && $scope->isInClosureBind() && $scope->hasVariableType('this')->yes()) {
+				$boundThisType = $scope->getVariableType('this');
+				$boundThisIsMethodClassOrSubClass = TrinaryLogic::createYes()->lazyAnd(
+					$objectClassNames,
+					static fn (string $objectClassName) => (new ObjectType($objectClassName))->isSuperTypeOf($boundThisType)->result,
+				);
+			}
 			if (
-				!$function instanceof MethodReflection
-				|| $function->isStatic()
-				|| $scopeIsInMethodClassOrSubClass->no()
+				!$boundThisIsMethodClassOrSubClass->yes()
+				&& (
+					!$function instanceof MethodReflection
+					|| $function->isStatic()
+					|| $scopeIsInMethodClassOrSubClass->no()
+				)
 			) {
 				// per php-src docs, this method can be called statically, even if declared non-static
 				if (strtolower($method->getName()) === 'loadhtml' && $method->getDeclaringClass()->getName() === DOMDocument::class) {
