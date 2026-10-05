@@ -122,6 +122,11 @@ class Container
 		assertType("'Foo'", Closure::bind(static fn () => self::A, null, Foo::class)());
 		assertType("'Bar'", Closure::bind(static fn () => self::A, null, Bar::class)());
 		assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new self(), null, Foo::class)());
+		// the default 'static' scope keeps the enclosing class
+		assertType("'ClosureBindScope\\\\Container'", Closure::bind(static fn () => self::class, null, 'static')());
+		assertType("'ClosureBindScope\\\\Container'", Closure::bind(static fn () => self::class, null)());
+		// the arguments are evaluated in the enclosing class
+		assertType("'ClosureBindScope\\\\Container'", Closure::bind(static fn () => self::class, null, self::class)());
 		// parent is the bound class's parent, not the enclosing class's
 		assertType("'Foo'", Closure::bind(static fn () => parent::staticMethod(), null, Bar::class)());
 		assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new parent(), null, Bar::class)());
