@@ -64,3 +64,33 @@ class Container
 	}
 
 }
+
+class WithProtected
+{
+
+	protected const PROT = 'p';
+
+	private const PRIV = 'p';
+
+	protected function __construct()
+	{
+	}
+
+}
+
+/**
+ * @param class-string $plain
+ * @param class-string<Foo>|class-string<WithProtected> $oneOfThem
+ * @param 'static'|null $staticOrNull
+ */
+function doBar(string $plain, string $oneOfThem, ?string $staticOrNull): void
+{
+	// an unknown bound class may be the one declaring the members
+	Closure::bind(static fn () => [WithProtected::PROT, WithProtected::PRIV, new WithProtected()], null, $plain);
+
+	// one of several classes: accessible from any of them
+	Closure::bind(static fn () => [WithProtected::PROT, WithProtected::PRIV, new WithProtected()], null, $oneOfThem);
+
+	// 'static' or null binds to no class here
+	Closure::bind(static fn () => [self::A, new self()], null, $staticOrNull);
+}

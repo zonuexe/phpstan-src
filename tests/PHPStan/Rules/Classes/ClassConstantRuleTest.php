@@ -688,6 +688,10 @@ class ClassConstantRuleTest extends RuleTestCase
 				'Using self outside of class scope.',
 				50,
 			],
+			[
+				'Using self outside of class scope.',
+				95,
+			],
 		]);
 	}
 

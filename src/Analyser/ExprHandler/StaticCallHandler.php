@@ -53,6 +53,7 @@ use PHPStan\Type\Generic\TemplateTypeVariance;
 use PHPStan\Type\Generic\TemplateTypeVarianceMap;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\NeverType;
+use PHPStan\Type\NullType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\StaticType;
 use PHPStan\Type\Type;
@@ -194,9 +195,9 @@ final class StaticCallHandler implements ExprHandler
 							if (isset($expr->getArgs()[2])) {
 								$argValue = $expr->getArgs()[2]->value;
 								$argValueType = $readArgType($argValue, false);
-								// a newScope that may name a class binds to one even when it is unknown
-								$bindsUnknownScopeClass = !$argValueType->isNull()->yes()
-									&& !(new ConstantStringType('static'))->isSuperTypeOf($argValueType)->yes();
+								// a newScope that may name a class binds to one even when it is unknown;
+								// 'static' and null name none
+								$bindsUnknownScopeClass = !TypeCombinator::union(new ConstantStringType('static'), new NullType())->isSuperTypeOf($argValueType)->yes();
 
 								$directClassNames = $argValueType->getObjectClassNames();
 								if (count($directClassNames) > 0) {

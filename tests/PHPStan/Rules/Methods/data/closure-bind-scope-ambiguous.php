@@ -38,3 +38,27 @@ function doFoo(string $withAncestor, string $plain): void
 	// 'static' binds to no class here
 	Closure::bind(static fn () => [self::sm(), self::sm(...)], null, 'static');
 }
+
+class WithProtected
+{
+
+	protected static function prot(): int
+	{
+		return 1;
+	}
+
+	private function priv(): int
+	{
+		return 2;
+	}
+
+}
+
+/**
+ * @param class-string $plain
+ */
+function doBar(string $plain, WithProtected $object): void
+{
+	// an unknown bound class may be the one declaring the members
+	Closure::bind(static fn () => [WithProtected::prot(), $object->priv(), WithProtected::prot(...)], null, $plain);
+}
