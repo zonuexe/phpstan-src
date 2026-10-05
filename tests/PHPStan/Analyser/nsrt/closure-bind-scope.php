@@ -57,6 +57,36 @@ assertType('int', Closure::bind(static fn () => self::$staticProp, null, Foo::cl
 assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new self(), null, Foo::class)());
 assertType('ClosureBindScope\Foo', Closure::bind(static fn () => new parent(), null, Bar::class)());
 
+// static:: follows the bound class like self:: does.
+assertType("'Bar'", Closure::bind(static fn () => static::A, null, Bar::class)());
+assertType('static(ClosureBindScope\\Foo)', Closure::bind(static fn () => new static(), null, Foo::class)());
+
+// A closure nested in a bound closure is bound too...
+assertType("'Bar'", Closure::bind(static fn () => (static fn () => self::A)(), null, Bar::class)());
+assertType("'BarFoo'", Closure::bind(static fn () => Closure::bind(static fn () => self::A, null, Bar::class)() . self::A, null, Foo::class)());
+
+// ...but a class declared in one has its own self/static.
+Closure::bind(static fn () => new class {
+
+	public const Z = 'z';
+
+	public function f(): void
+	{
+		assertType("'z'", self::Z);
+		assertType("'z'", static::Z);
+	}
+
+}, null, Foo::class);
+Closure::bind(static fn () => new class extends Foo {
+
+	public function f(): void
+	{
+		assertType("'Foo'", self::A);
+		assertType("'Foo'", parent::A);
+	}
+
+}, null, Bar::class);
+
 // The bound class is the one the call site evaluated, so an object newScope works too.
 function objectScope(Foo $foo, Bar $bar): void
 {

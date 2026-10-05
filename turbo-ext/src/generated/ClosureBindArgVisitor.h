@@ -8,12 +8,6 @@
 
 namespace ptdecl::ClosureBindArgVisitor {
 
-/* the OBJ_PROP_NUM slots of the instance properties the class declares (the inherited ones come first) */
-namespace slot {
-inline constexpr uint32_t scopeStack = 0;
-inline constexpr uint32_t boundClosures = 1;
-} // namespace slot
-
 inline void declareClass(reg::Class &cls)
 {
 	cls.final();
@@ -23,36 +17,26 @@ inline void declareClass(reg::Class &cls)
 /* the properties the class declares itself, in declaration order (a used trait's come from its registrar) */
 inline void declareProperties(reg::Class &cls)
 {
-	cls.property("scopeStack", ZEND_ACC_PRIVATE, reg::PropertyKind::TypedEmptyArray, MAY_BE_ARRAY);
-	cls.property("boundClosures", ZEND_ACC_PRIVATE, reg::PropertyKind::TypedEmptyArray, MAY_BE_ARRAY);
+	(void) cls;
 }
 
 /* the string and parameter tables the signatures below index into (see reg::Sig) */
 namespace sigtab {
 inline constexpr char strings[] =
-	"nodes\0" /* 0 */
-	"\0" /* 6 */
-	"beforeTraverse\0" /* 7 */
-	"node\0" /* 22 */
-	"PhpParser\\Node\0" /* 27 */
-	"enterNode\0" /* 42 */
-	"leaveNode"; /* 52 */
+	"node\0" /* 0 */
+	"PhpParser\\Node\0" /* 5 */
+	"\0" /* 20 */
+	"enterNode"; /* 21 */
 inline constexpr reg::PackedArg args[] = {
-	reg::packed(0, MAY_BE_ARRAY), /* beforeTraverse $nodes */
-	reg::packed(6, MAY_BE_NULL | MAY_BE_ARRAY), /* beforeTraverse return */
-	reg::packed(22, 0, 27), /* enterNode $node */
-	reg::packed(6, MAY_BE_NULL, 27), /* enterNode return */
-	reg::packed(22, 0, 27), /* leaveNode $node */
-	reg::packed(6, MAY_BE_NULL, 27), /* leaveNode return */
+	reg::packed(0, 0, 5), /* enterNode $node */
+	reg::packed(20, MAY_BE_NULL, 5), /* enterNode return */
 };
 using Sig = reg::Sig<strings, args>;
 } // namespace sigtab
 
 /* the signatures of the methods the class declares itself (a used trait's are in the trait's header) */
 namespace sig {
-inline constexpr sigtab::Sig beforeTraverse = { { 7 /* beforeTraverse */, 1, 0, 1, 1, ZEND_ACC_PUBLIC } };
-inline constexpr sigtab::Sig enterNode = { { 42 /* enterNode */, 1, 2, 1, 3, ZEND_ACC_PUBLIC } };
-inline constexpr sigtab::Sig leaveNode = { { 52 /* leaveNode */, 1, 4, 1, 5, ZEND_ACC_PUBLIC } };
+inline constexpr sigtab::Sig enterNode = { { 21 /* enterNode */, 1, 0, 1, 1, ZEND_ACC_PUBLIC } };
 } // namespace sig
 
 } // namespace ptdecl::ClosureBindArgVisitor

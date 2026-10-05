@@ -85,6 +85,12 @@ $parserVisitorSnippets = [
 		Closure::bind(newScope: Bar::class, closure: function () { return static::B; });
 		Closure::bind(function () { return parent::C; }, newScope: Baz::class); Closure::bind(fn () => self::D, $obj, newScope: Qux::class);
 		Closure::bind(closure: fn () => self::E); Closure::bind(Closure: fn () => self::F, newscope: X::class, other: 1);',
+	// ... duplicated, unpacked and nested arguments
+	'<?php
+		Closure::bind(fn () => 1, $o, Foo::class, newScope: Bar::class); Closure::bind($c, $o, closure: $d, newThis: $p);
+		Closure::bind(...$a, $o); Closure::bind(...$a); Closure::bind($c, ...$rest); Closure::bind(newThis: $o, closure: $c);
+		Closure::bind(fn () => 1, $o, Closure::bind(fn () => self::class, $p, X::class)());
+		Closure::bind(Closure::bind(fn () => 1, $o, X::class), $p, Y::class);',
 
 	// array offsets: every literal spelling the normalizer canonicalises
 	'<?php echo $a[\'k\'], $a["k"], $a["a\nb"], $a["$x"], $a["pre{$x}post"], $a[1], $a[0x1F], $a[0b11], $a[$i], $a[C], $a[];',

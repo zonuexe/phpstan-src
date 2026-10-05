@@ -276,7 +276,6 @@ namespace sigs = ptdecl::MutatingScope::sig;
 #include "TypeOps.h"
 #include "AcceptorValues.h"
 #include "AnalyserValues.h"
-#include "Engine.h"
 
 #include <algorithm>
 #include <vector>
@@ -3439,27 +3438,6 @@ public:
 		if (UNEXPECTED(originalClass.isNull())) return zv::Val();
 		zv::Str lowerClass = zv::Str::adopt(zend_string_tolower(originalClass.get()));
 
-		zv::Val bindScopeClassReflection = resolveClosureBindScopeClass(name);
-		if (UNEXPECTED(bindScopeClassReflection.isUndef())) return zv::Val();
-		if (!bindScopeClassReflection.isNull()) {
-			if (zend_string_equals_literal(lowerClass.get(), "self") || zend_string_equals_literal(lowerClass.get(), "static")) {
-				zend_object *reflection = requireObject(bindScopeClassReflection, "getName");
-				if (UNEXPECTED(reflection == NULL)) return zv::Val();
-				return pt_class_reflection_get_name(reflection);
-			}
-			if (zend_string_equals_literal(lowerClass.get(), "parent")) {
-				zend_object *reflection = requireObject(bindScopeClassReflection, "getParentClass");
-				if (UNEXPECTED(reflection == NULL)) return zv::Val();
-				zv::Val parentClassReflection = pt_type_call(reflection, PT_LC("getparentclass"), 0, NULL);
-				if (UNEXPECTED(parentClassReflection.isUndef())) return zv::Val();
-				if (!parentClassReflection.isNull()) {
-					zend_object *parent = requireObject(parentClassReflection, "getName");
-					if (UNEXPECTED(parent == NULL)) return zv::Val();
-					return pt_class_reflection_get_name(parent);
-				}
-			}
-		}
-
 		zv::Val closureBindScopeClassName = getClosureBindScopeClassName();
 		if (UNEXPECTED(closureBindScopeClassName.isUndef())) return zv::Val();
 		if (zend_string_equals_literal(lowerClass.get(), "self") || zend_string_equals_literal(lowerClass.get(), "static")) {
@@ -3506,16 +3484,11 @@ public:
 	/** @api */
 	zv::Val resolveTypeByName(zend_object *name)
 	{
-		zv::Val bindScopeClassReflection = resolveClosureBindScopeClass(name);
-		if (UNEXPECTED(bindScopeClassReflection.isUndef())) return zv::Val();
 		zval nameNodeZv;
 		ZVAL_OBJ(&nameNodeZv, name);
 		zv::Val lower = pt_name_node_to_lower_string(&nameNodeZv);
 		if (UNEXPECTED(lower.isUndef())) return zv::Val();
 		if (Z_TYPE_P(lower.raw()) == IS_STRING && zend_string_equals_literal(Z_STR_P(lower.raw()), "static")) {
-			if (!bindScopeClassReflection.isNull()) {
-				return newStaticType(bindScopeClassReflection, "StaticType");
-			}
 			zv::Val closureBindScopeClassReflection = thisGetClosureBindScopeClassReflection();
 			if (UNEXPECTED(closureBindScopeClassReflection.isUndef())) return zv::Val();
 			if (!closureBindScopeClassReflection.isNull()) {
@@ -3537,13 +3510,6 @@ public:
 		if (UNEXPECTED(Z_TYPE_P(originalClass.raw()) != IS_STRING)) {
 			zend_type_error("PHPStan\\Analyser\\MutatingScope::resolveName(): Return value must be of type string, %s returned", zend_zval_value_name(originalClass.raw()));
 			return zv::Val();
-		}
-		if (!bindScopeClassReflection.isNull()) {
-			zv::Ref provider = slot(PT_MS_PROP_REFLECTION_PROVIDER);
-			if (UNEXPECTED(!provider.isObject())) return uninitializedProperty("reflectionProvider");
-			bool hasClass;
-			if (UNEXPECTED(!pt_reflection_provider_has_class(provider.asObject(), originalClass.raw(), hasClass))) return zv::Val();
-			if (hasClass) return pt_type_new_object_type(originalClass.raw());
 		}
 		// outside a class only self/parent/static follow the Closure::bind() scope;
 		// inside one any name of the bound class does, as before
@@ -3614,29 +3580,6 @@ public:
 		if (UNEXPECTED(!pt_reflection_provider_has_class(provider.asObject(), className.raw(), hasClass))) return zv::Val();
 		if (!hasClass) return zv::Val::null();
 		return pt_reflection_provider_get_class(provider.asObject(), className.raw());
-	}
-
-	/* Mirrors resolveClosureBindScopeClass(): the class a self/parent/static
-	 * name is bound to by a surrounding Closure::bind() call, annotated by
-	 * ClosureBindArgVisitor and resolved by ClosureBindScopeResolver; IS_NULL
-	 * for null, UNDEF = pending exception */
-	zv::Val resolveClosureBindScopeClass(zend_object *name)
-	{
-		/* Cheap pre-check so the common path stays free of a container lookup.
-		 * The twin tests hasAttribute(); an attribute holding null (the default
-		 * "static" scope) is skipped here as well, as the resolver answers null
-		 * for it without side effects. */
-		zv::Val scopeArg = pt_engine_node_get_attribute(name, PT_LC("closureBindScope"));
-		if (UNEXPECTED(scopeArg.isUndef())) return zv::Val();
-		if (scopeArg.isNull()) return zv::Val::null();
-
-		zv::Val resolver = containerGetByType(PT_LC("PHPStan\\Analyser\\ClosureBindScopeResolver"));
-		if (UNEXPECTED(resolver.isUndef())) return zv::Val();
-		if (UNEXPECTED(requireObject(resolver, "resolveScopeClass") == NULL)) return zv::Val();
-		zval thisZv, nameZv;
-		ZVAL_OBJ(&thisZv, self);
-		ZVAL_OBJ(&nameZv, name);
-		return pt_closure_bind_scope_resolver_resolve_scope_class(resolver.raw(), &thisZv, &nameZv);
 	}
 
 	/* new StaticType($classReflection) / new ThisType($classReflection):

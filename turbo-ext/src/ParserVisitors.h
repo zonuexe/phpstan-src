@@ -194,48 +194,6 @@ inline void popStack(zval *stack)
 }
 
 /*
- * The stacks kept top-first ($scopeStack) are plain lists pushed with
- * array_unshift() and popped with array_shift(): both renumber the list, so
- * each builds the renumbered list and replaces the property's array.
- */
-inline void replaceStack(zval *stack, zv::Arr replacement)
-{
-	zval old;
-	ZVAL_COPY_VALUE(&old, stack);
-	zval value = replacement.take();
-	ZVAL_COPY_VALUE(stack, &value);
-	zval_ptr_dtor(&old);
-}
-
-inline void unshiftStack(zval *stack, zval *value)
-{
-	if (UNEXPECTED(Z_TYPE_P(stack) != IS_ARRAY)) return;
-	zv::Arr shifted = zv::Arr::create(zend_hash_num_elements(Z_ARRVAL_P(stack)) + 1);
-	shifted.push(zv::Ref(value));
-	for (auto entry : zv::ArrRef(stack)) {
-		shifted.push(entry.value());
-	}
-	replaceStack(stack, std::move(shifted));
-}
-
-inline void shiftStack(zval *stack)
-{
-	if (UNEXPECTED(Z_TYPE_P(stack) != IS_ARRAY)) return;
-	uint32_t count = zend_hash_num_elements(Z_ARRVAL_P(stack));
-	if (count == 0) return;
-	zv::Arr shifted = zv::Arr::create(count - 1);
-	bool first = true;
-	for (auto entry : zv::ArrRef(stack)) {
-		if (first) {
-			first = false;
-			continue;
-		}
-		shifted.push(entry.value());
-	}
-	replaceStack(stack, std::move(shifted));
-}
-
-/*
  * The shape every port of a "reacts to one FuncCall by name" visitor has:
  * `$node instanceof FuncCall && $node->name instanceof Name &&
  * !$node->isFirstClassCallable()`, then the lowercased function name.
