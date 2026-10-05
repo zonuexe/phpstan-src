@@ -18,12 +18,19 @@ final class SelfClassResolver
 
 	/**
 	 * Whether `self`, `static` and `parent` name a class that cannot be checked: the
-	 * closure is bound to one of several classes, or to a class-string whose class is
-	 * unknown. Rules stay silent then rather than check a class that may be the wrong one.
+	 * closure is bound to one of several classes, or to a class whose class is unknown
+	 * (MutatingScope::isClosureBindScopeClassAmbiguous()). Rules stay silent then rather
+	 * than check a class that may be the wrong one. The analyser always hands rules a
+	 * MutatingScope; any other Scope implementation carries no Closure::bind() classes
+	 * this could read, so it answers false for one.
 	 */
 	public static function isAmbiguous(Scope $scope): bool
 	{
-		return $scope instanceof MutatingScope && $scope->isClosureBindScopeClassAmbiguous();
+		if (!$scope instanceof MutatingScope) {
+			return false;
+		}
+
+		return $scope->isClosureBindScopeClassAmbiguous();
 	}
 
 	/**

@@ -95,10 +95,10 @@ final class ClassConstantRule implements Rule
 		if ($class instanceof Node\Name) {
 			$className = (string) $class;
 			$lowercasedClassName = strtolower($className);
-			$selfClassReflection = SelfClassResolver::resolve($scope, $this->reflectionProvider);
 			if (in_array($lowercasedClassName, ['self', 'static', 'parent'], true) && SelfClassResolver::isAmbiguous($scope)) {
 				return [];
 			}
+			$selfClassReflection = SelfClassResolver::resolve($scope, $this->reflectionProvider);
 			if (in_array($lowercasedClassName, ['self', 'static'], true)) {
 				if ($selfClassReflection === null) {
 					return [
