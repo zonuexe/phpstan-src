@@ -276,6 +276,7 @@ namespace sigs = ptdecl::MutatingScope::sig;
 #include "TypeOps.h"
 #include "AcceptorValues.h"
 #include "AnalyserValues.h"
+#include "Engine.h"
 
 #include <algorithm>
 #include <vector>
@@ -824,6 +825,56 @@ public:
 		zend_class_entry *ce = pt_class_loaded(classIdx);
 		if (ce == NULL) return EG(exception) == NULL;
 		out = instanceof_function(value.asObject()->ce, ce);
+		return true;
+	}
+
+	/* private static (twin containsIncrementOrDecrement()) — whether the node
+	 * holds an increment or a decrement outside the body of a closure or an
+	 * arrow function; false = pending exception */
+	[[nodiscard]] static bool containsIncrementOrDecrement(zend_object *node, bool &out)
+	{
+		out = false;
+		zval nodeZv;
+		ZVAL_OBJ(&nodeZv, node);
+		for (int classIdx : { PT_CLASS_PRE_INC, PT_CLASS_PRE_DEC, PT_CLASS_POST_INC, PT_CLASS_POST_DEC }) {
+			bool is;
+			if (UNEXPECTED(!isInstance(zv::Ref(&nodeZv), classIdx, is))) return false;
+			if (is) {
+				out = true;
+				return true;
+			}
+		}
+		for (int classIdx : { PT_CLASS_FUNCTION_LIKE, PT_CLASS_VARIABLE, PT_CLASS_SCALAR }) {
+			bool is;
+			if (UNEXPECTED(!isInstance(zv::Ref(&nodeZv), classIdx, is))) return false;
+			if (is) return true;
+		}
+
+		pt_node_class_info *info = pt_node_class_info_for_object(node);
+		if (info == NULL || !PT_HAS_SUBNODES(info)) return true;
+		zend_class_entry *nodeIface = pt_class(PT_CLASS_NODE);
+		if (UNEXPECTED(nodeIface == NULL)) return false;
+
+		for (uint32_t i = 0; i < info->subnode_count; i++) {
+			zval *val = OBJ_PROP(node, info->subnode_offsets[i]);
+			ZVAL_DEREF(val);
+			if (Z_TYPE_P(val) == IS_OBJECT) {
+				if (!instanceof_function(Z_OBJCE_P(val), nodeIface)) continue;
+				bool ok = true;
+				pt_engine_with_stack([&]() { ok = containsIncrementOrDecrement(Z_OBJ_P(val), out); });
+				if (UNEXPECTED(!ok) || out) return ok;
+			} else if (Z_TYPE_P(val) == IS_ARRAY) {
+				zval *el;
+				ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(val), el) {
+					zval *item = el;
+					ZVAL_DEREF(item);
+					if (Z_TYPE_P(item) != IS_OBJECT || !instanceof_function(Z_OBJCE_P(item), nodeIface)) continue;
+					bool ok = true;
+					pt_engine_with_stack([&]() { ok = containsIncrementOrDecrement(Z_OBJ_P(item), out); });
+					if (UNEXPECTED(!ok) || out) return ok;
+				} ZEND_HASH_FOREACH_END();
+			}
+		}
 		return true;
 	}
 
@@ -6742,6 +6793,10 @@ public:
 		}
 		if (UNEXPECTED(EG(exception))) return false;
 
+		bool incDecInside;
+		if (UNEXPECTED(!containsIncrementOrDecrement(expr, incDecInside))) return false;
+		if (incDecInside) return true;
+
 		zv::Val exprString = thisGetNodeKey(&exprZv);
 		if (UNEXPECTED(exprString.isUndef())) return false;
 		zv::Str key = zv::Str::adopt(zval_get_string(exprString.raw()));
@@ -8122,6 +8177,25 @@ public:
 				return zv::Val();
 			}
 			HashTable *holders = expressions.asArrayTable();
+
+			{
+				zval *firstHolder = zend_hash_index_find(holders, 0);
+				if (UNEXPECTED(firstHolder == NULL)) {
+					pt_throw_should_not_happen();
+					return zv::Val();
+				}
+				zv::Val firstTypeHolder = conditionalTypeHolder(zv::Ref(firstHolder));
+				if (UNEXPECTED(firstTypeHolder.isUndef())) return zv::Val();
+				zv::Val firstExpr = holderExpr(firstTypeHolder.ref());
+				if (UNEXPECTED(firstExpr.isUndef())) return zv::Val();
+				if (UNEXPECTED(Z_TYPE_P(firstExpr.raw()) != IS_OBJECT)) {
+					pt_throw_should_not_happen();
+					return zv::Val();
+				}
+				bool incDecInside;
+				if (UNEXPECTED(!containsIncrementOrDecrement(Z_OBJ_P(firstExpr.raw()), incDecInside))) return zv::Val();
+				if (incDecInside) continue;
+			}
 
 			/* TrinaryLogic::lazyExtremeIdentity(): the operands' value when
 			 * they all agree, Maybe when any differs */

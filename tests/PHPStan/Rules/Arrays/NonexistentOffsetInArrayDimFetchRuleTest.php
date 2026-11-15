@@ -496,6 +496,10 @@ class NonexistentOffsetInArrayDimFetchRuleTest extends RuleTestCase
 				'Offset 1|int<3, max> does not exist on array{}.',
 				10,
 			],
+			[
+				'Offset 2|int<4, max> does not exist on array{}.',
+				10,
+			],
 		]);
 	}
 

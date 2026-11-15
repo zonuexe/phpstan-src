@@ -121,6 +121,7 @@ use function explode;
 use function get_class;
 use function implode;
 use function in_array;
+use function is_array;
 use function is_string;
 use function ltrim;
 use function md5;
@@ -3693,6 +3694,10 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 			throw new ShouldNotHappenException();
 		}
 
+		if (self::containsIncrementOrDecrement($expr)) {
+			return;
+		}
+
 		$exprString = $this->getNodeKey($expr);
 		$this->expressionTypes[$exprString] = new ExpressionTypeHolder($expr, $type, $certainty);
 		$this->nativeExpressionTypes[$exprString] = new ExpressionTypeHolder($expr, $nativeType, $certainty);
@@ -3702,6 +3707,45 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 		}
 
 		$this->specifyExpressionTypeInPlace($expr->expr, $type, $nativeType, $certainty);
+	}
+
+	/**
+	 * Evaluating `$a[$i++]` again reads a different offset, so a type narrowed or
+	 * assigned for it is not the type of the next evaluation. An increment or a
+	 * decrement in the body of a closure or an arrow function does not run when
+	 * the expression is evaluated.
+	 */
+	private static function containsIncrementOrDecrement(Node $node): bool
+	{
+		if (
+			$node instanceof Expr\PreInc
+			|| $node instanceof Expr\PreDec
+			|| $node instanceof Expr\PostInc
+			|| $node instanceof Expr\PostDec
+		) {
+			return true;
+		}
+
+		if ($node instanceof Node\FunctionLike || $node instanceof Variable || $node instanceof Scalar) {
+			return false;
+		}
+
+		foreach ($node->getSubNodeNames() as $subNodeName) {
+			$subNode = $node->$subNodeName;
+			if ($subNode instanceof Node) {
+				if (self::containsIncrementOrDecrement($subNode)) {
+					return true;
+				}
+			} elseif (is_array($subNode)) {
+				foreach ($subNode as $subNodeItem) {
+					if ($subNodeItem instanceof Node && self::containsIncrementOrDecrement($subNodeItem)) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	public function assignExpression(Expr $expr, Type $type, Type $nativeType): self
@@ -4246,6 +4290,10 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter,
 		[$conditions] = ScopeOps::matchConditionalExpressions($scope->conditionalExpressions, $specifiedExpressions);
 
 		foreach ($conditions as $conditionalExprString => $expressions) {
+			if (self::containsIncrementOrDecrement($expressions[0]->getTypeHolder()->getExpr())) {
+				continue;
+			}
+
 			$certainty = TrinaryLogic::lazyExtremeIdentity($expressions, static fn (ConditionalExpressionHolder $holder) => $holder->getTypeHolder()->getCertainty());
 			if ($certainty->no()) {
 				unset($scope->expressionTypes[$conditionalExprString]);
